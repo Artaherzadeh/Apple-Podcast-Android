@@ -5,7 +5,10 @@ on:
     branches: [ "main", "master" ]
   pull_request:
     branches: [ "main", "master" ]
-  workflow_dispatch: # Allows manual trigger of the build
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -31,8 +34,24 @@ jobs:
     - name: Build Debug APK
       run: ./gradlew assembleDebug
 
+    - name: Rename APK file
+      run: mv app/build/outputs/apk/debug/app-debug.apk "app/build/outputs/apk/debug/Apple Podcasts.apk"
+
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: apple-podcasts-app
-        path: app/build/outputs/apk/debug/app-debug.apk
+        path: "app/build/outputs/apk/debug/Apple Podcasts.apk"
+
+    - name: Create or Update Release
+      if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+      uses: ncipollo/release-action@v1
+      with:
+        artifacts: "app/build/outputs/apk/debug/Apple Podcasts.apk"
+        tag: "latest"
+        name: "Apple Podcasts Android App (Latest)"
+        body: "Automated rolling release containing the latest compiled APK. Click `Apple Podcasts.apk` below to download and install."
+        allowUpdates: true
+        removeArtifacts: true
+        replacesArtifacts: true
+        token: ${{ secrets.GITHUB_TOKEN }}
