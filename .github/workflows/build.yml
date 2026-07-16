@@ -51,6 +51,7 @@ jobs:
         tag: "latest"
         name: "Apple Podcasts Android App (Latest)"
         body: "Automated rolling release containing the latest compiled APK. Click `Apple Podcasts.apk` below to download and install."
+        generateReleaseNotes: true
         allowUpdates: true
         removeArtifacts: true
         replacesArtifacts: true
