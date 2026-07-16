@@ -32,7 +32,54 @@
             android:layout_height="1dp"
             android:background="#2C2C2E" />
 
-        <!-- 1. Go Back -->
+        <!-- 1. Home -->
+        <LinearLayout
+            android:id="@+id/menu_home"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="16dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?android:attr/selectableItemBackground">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_home"
+                android:contentDescription="Home"
+                android:layout_marginEnd="16dp" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Home"
+                    android:textColor="@color/pure_white"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Return to Apple Podcasts homepage"
+                    android:textColor="#888888"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#2C2C2E" />
+
+        <!-- 2. Go Back -->
         <LinearLayout
             android:id="@+id/menu_back"
             android:layout_width="match_parent"
@@ -79,7 +126,7 @@
             android:layout_height="1dp"
             android:background="#2C2C2E" />
 
-        <!-- 2. Force Refresh -->
+        <!-- 3. Force Refresh -->
         <LinearLayout
             android:id="@+id/menu_refresh"
             android:layout_width="match_parent"
@@ -126,7 +173,7 @@
             android:layout_height="1dp"
             android:background="#2C2C2E" />
 
-        <!-- 3. Clear Cache -->
+        <!-- 4. Clear Cache -->
         <LinearLayout
             android:id="@+id/menu_clear_cache"
             android:layout_width="match_parent"
@@ -173,7 +220,7 @@
             android:layout_height="1dp"
             android:background="#2C2C2E" />
 
-        <!-- 4. Background Playback Settings -->
+        <!-- 5. Background Playback Settings -->
         <LinearLayout
             android:id="@+id/menu_battery"
             android:layout_width="match_parent"
