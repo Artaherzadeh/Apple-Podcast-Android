@@ -219,10 +219,16 @@ class MainActivity : AppCompatActivity() {
         dialog.setContentView(R.layout.dialog_menu)
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 
+        val menuHome = dialog.findViewById<LinearLayout>(R.id.menu_home)
         val menuBack = dialog.findViewById<LinearLayout>(R.id.menu_back)
         val menuRefresh = dialog.findViewById<LinearLayout>(R.id.menu_refresh)
         val menuClearCache = dialog.findViewById<LinearLayout>(R.id.menu_clear_cache)
         val menuBattery = dialog.findViewById<LinearLayout>(R.id.menu_battery)
+
+        menuHome.setOnClickListener {
+            dialog.dismiss()
+            webView.loadUrl(targetUrl)
+        }
 
         menuBack.setOnClickListener {
             dialog.dismiss()
