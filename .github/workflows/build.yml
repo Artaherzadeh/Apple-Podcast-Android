@@ -44,7 +44,7 @@ jobs:
         path: "app/build/outputs/apk/debug/Apple Podcasts.apk"
 
     - name: Create or Update Release
-      if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
       uses: ncipollo/release-action@v1
       with:
         artifacts: "app/build/outputs/apk/debug/Apple Podcasts.apk"
