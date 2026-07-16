@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base application theme -->
+    <style name="Theme.ApplePodcastWrapper" parent="Theme.NoTitleBar">
+        <!-- Status and Navigation Bars -->
+        <item name="android:windowLightStatusBar" tools:targetApi="m" xmlns:tools="http://schemas.google.com/tools">false</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowBackground">@color/pure_black</item>
+    </style>
+</resources>

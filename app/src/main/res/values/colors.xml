@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand colors for Podcasts (Apple Podcast Violet & Sleek Dark theme) -->
+    <color name="purple_primary">#A334FF</color>
+    <color name="purple_variant">#821BE3</color>
+    <color name="dark_background">#121212</color>
+    <color name="pure_black">#000000</color>
+    <color name="pure_white">#FFFFFF</color>
+    <color name="loading_bar_bg">#2C2C2C</color>
+    
+    <!-- Material 3 Palette defaults -->
+    <color name="primary">#A334FF</color>
+    <color name="primary_container">#ECE0FF</color>
+    <color name="background">#121212</color>
+    <color name="surface">#121212</color>
+</resources>

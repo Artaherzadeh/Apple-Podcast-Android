@@ -1,0 +1,21 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Outer Podcast Wave Ring -->
+    <path
+        android:pathData="M54,22A32,32 0,0 0,22 54A32,32 0,0 0,54 86A32,32 0,0 0,86 54A32,32 0,0 0,54 22ZM54,30A24,24 0,0 1,78 54A24,24 0,0 1,54 78A24,24 0,0 1,30 54A24,24 0,0 1,54 30Z"
+        android:fillColor="#A334FF" />
+        
+    <!-- Middle Podcast Wave Ring -->
+    <path
+        android:pathData="M54,36A18,18 0,0 0,36 54A18,18 0,0 0,54 72A18,18 0,0 0,72 54A18,18 0,0 0,54 36ZM54,42A12,12 0,0 1,66 54A12,12 0,0 1,54 66A12,12 0,0 1,42 54A12,12 0,0 1,54 42Z"
+        android:fillColor="#FFFFFF" />
+        
+    <!-- Inner Solid Podcast Core -->
+    <path
+        android:pathData="M54,46A8,8 0,1 0,54 62A8,8 0,1 0,54 46Z"
+        android:fillColor="#A334FF" />
+</vector>
