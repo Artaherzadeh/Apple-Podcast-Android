@@ -32,4 +32,6 @@
     
     <!-- Config values -->
     <string name="git_repo_url">https://github.com/Artaherzadeh/Apple-Podcast-Android</string>
+    <string name="target_url">https://podcasts.apple.com/</string>
+    <string name="toast_permission_denied">Notifications permission is required to control playback from the lock screen.</string>
 </resources>

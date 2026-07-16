@@ -1,13 +1,16 @@
 package com.alireza.podcasts
 
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Bitmap
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -28,8 +31,10 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.browser.customtabs.CustomTabsIntent
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.alireza.podcasts.RoutingUtils.RouteType
 
@@ -41,7 +46,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnRetry: Button
     private lateinit var btnMenu: ImageButton
     
-    private val targetUrl = "https://podcasts.apple.com/"
+    // Config URLs (mapped from strings.xml)
+    private val targetUrl by lazy { getString(R.string.target_url) }
     
     // Gesture variables
     private val gestureHandler = Handler(Looper.getMainLooper())
@@ -72,7 +78,53 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Media receiver for system lockscreen inputs
+    private val mediaReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (isDestroyed || isFinishing) return
+            when (intent?.action) {
+                MediaPlaybackService.BROADCAST_PLAY -> {
+                    webView.post {
+                        webView.evaluateJavascript(
+                            "const v = document.querySelector('video, audio'); if (v) v.play();", 
+                            null
+                        )
+                    }
+                }
+                MediaPlaybackService.BROADCAST_PAUSE -> {
+                    webView.post {
+                        webView.evaluateJavascript(
+                            "const v = document.querySelector('video, audio'); if (v) v.pause();", 
+                            null
+                        )
+                    }
+                }
+                MediaPlaybackService.BROADCAST_SEEK -> {
+                    val seekPos = intent.getLongExtra(MediaPlaybackService.EXTRA_SEEK_POS, 0L)
+                    webView.post {
+                        webView.evaluateJavascript(
+                            "const v = document.querySelector('video, audio'); if (v) v.currentTime = ${seekPos / 1000.0};", 
+                            null
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // Notification permission request callback
+    private val requestNotificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (!isGranted) {
+            Toast.makeText(this, getString(R.string.toast_permission_denied), Toast.LENGTH_LONG).show()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Initialize splash screen before onCreate
+        installSplashScreen()
+        
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -85,6 +137,8 @@ class MainActivity : AppCompatActivity() {
         setupWebView()
         setupGestureDetector()
         setupConnectivityMonitor()
+        setupMediaReceiver()
+        checkNotificationPermission()
 
         btnMenu.setOnClickListener {
             showOptionMenu()
@@ -136,6 +190,15 @@ class MainActivity : AppCompatActivity() {
         
         webView.scrollBarStyle = View.SCROLLBARS_INSIDE_OVERLAY
 
+        // Set WebView Download Listener
+        webView.setDownloadListener { url, _, _, _, _ ->
+            if (isDestroyed || isFinishing) return@setDownloadListener
+            openCustomTab(url)
+        }
+
+        // Add Javascript Bridge for Media Session syncing
+        webView.addJavascriptInterface(MediaBridge(), "AndroidMediaBridge")
+
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val url = request.url.toString()
@@ -158,6 +221,7 @@ class MainActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 progressBar.visibility = View.GONE
+                injectMediaSessionBridge()
             }
 
             override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
@@ -199,6 +263,7 @@ class MainActivity : AppCompatActivity() {
                 progressBar.progress = newProgress
                 if (newProgress == 100) {
                     progressBar.visibility = View.GONE
+                    injectMediaSessionBridge()
                 } else {
                     progressBar.visibility = View.VISIBLE
                 }
@@ -395,20 +460,95 @@ class MainActivity : AppCompatActivity() {
         webView.visibility = View.VISIBLE
     }
 
+    private fun setupMediaReceiver() {
+        val filter = IntentFilter().apply {
+            addAction(MediaPlaybackService.BROADCAST_PLAY)
+            addAction(MediaPlaybackService.BROADCAST_PAUSE)
+            addAction(MediaPlaybackService.BROADCAST_SEEK)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(mediaReceiver, filter, RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(mediaReceiver, filter)
+        }
+    }
+
+    private fun checkNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                requestNotificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
+    private fun injectMediaSessionBridge() {
+        // Polling JavaScript to extract HTML5 player metadata and pipe to Kotlin bridge
+        val js = """
+            (function() {
+                if (window.hasAppleMediaSessionHooked) return;
+                window.hasAppleMediaSessionHooked = true;
+                
+                let lastPlaying = false;
+                let lastTitle = '';
+                let lastArtist = '';
+                let lastImg = '';
+                let lastDuration = 0;
+                
+                function syncPlayerState() {
+                    const video = document.querySelector('video, audio');
+                    if (!video) return;
+
+                    const isPlaying = !video.paused;
+                    const duration = Math.floor((video.duration || 0) * 1000);
+                    const position = Math.floor((video.currentTime || 0) * 1000);
+
+                    // Extract title and artist using selectors from Apple Podcast site structure
+                    const titleEl = document.querySelector('.product-header__title, .audio-player__title, [class*="title"]');
+                    const artistEl = document.querySelector('.product-header__subtitle, .audio-player__subtitle, [class*="subtitle"]');
+                    const imgEl = document.querySelector('.product-header__image img, .audio-player__artwork img, [class*="artwork"] img');
+
+                    const title = titleEl ? titleEl.innerText.trim() : 'Apple Podcasts';
+                    const artist = artistEl ? artistEl.innerText.trim() : 'Playing';
+                    const img = imgEl ? imgEl.src : '';
+
+                    // Only bridge if playback details actually changed (avoid constant JNI overhead)
+                    if (isPlaying !== lastPlaying || title !== lastTitle || artist !== lastArtist || img !== lastImg || Math.abs(duration - lastDuration) > 2000) {
+                        lastPlaying = isPlaying;
+                        lastTitle = title;
+                        lastArtist = artist;
+                        lastImg = img;
+                        lastDuration = duration;
+                        
+                        AndroidMediaBridge.onPlaybackStateChanged(isPlaying, title, artist, img, duration, position);
+                    }
+                }
+                setInterval(syncPlayerState, 1000);
+            })();
+        """.trimIndent()
+        webView.evaluateJavascript(js, null)
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         webView.saveState(outState)
     }
 
     override fun onDestroy() {
-        // Unregister Network Callback safely behind a guard
+        // Unregister Network Callback safely
         try {
             connectivityManager.unregisterNetworkCallback(networkCallback)
         } catch (e: Exception) {
             e.printStackTrace()
         }
 
-        // Clean up gesture handler to prevent leak on background threads
+        // Unregister Media broadcast receiver
+        try {
+            unregisterReceiver(mediaReceiver)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        // Clean up gesture handler
         gestureHandler.removeCallbacksAndMessages(null)
 
         // Webview clean teardown
@@ -430,5 +570,27 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+    }
+
+    // JS Media Bridge interface class
+    inner class MediaBridge {
+        @android.webkit.JavascriptInterface
+        fun onPlaybackStateChanged(isPlaying: Boolean, title: String, artist: String, imageUrl: String, duration: Long, position: Long) {
+            if (isDestroyed || isFinishing) return
+            val intent = Intent(this@MainActivity, MediaPlaybackService::class.java).apply {
+                action = MediaPlaybackService.ACTION_UPDATE_STATE
+                putExtra(MediaPlaybackService.EXTRA_IS_PLAYING, isPlaying)
+                putExtra(MediaPlaybackService.EXTRA_TITLE, title)
+                putExtra(MediaPlaybackService.EXTRA_ARTIST, artist)
+                putExtra(MediaPlaybackService.EXTRA_IMAGE_URL, imageUrl)
+                putExtra(MediaPlaybackService.EXTRA_DURATION, duration)
+                putExtra(MediaPlaybackService.EXTRA_POSITION, position)
+            }
+            if (isPlaying && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent)
+            } else {
+                startService(intent)
+            }
+        }
     }
 }
