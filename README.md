@@ -1,44 +1,60 @@
-# Apple Podcasts Android WebView Wrapper
+# Apple Podcasts Android Web Wrapper
 
-A modern WebView wrapper that packages the Apple Podcasts web player into a native Android app.
+A lightweight, secure, and open-source Android container that wraps the official Apple Podcasts web player into a native-feeling application. 
 
-## How to build this app in the cloud (No Git or local tools required)
+Since Apple does not provide an official Apple Podcasts app for Android, this project bridges that gap by running the web player in a highly optimized, full-screen Android WebView with background playback capabilities, offline handling, and custom gestures.
 
-Since you don't have Git, Android Studio, or Java installed on your computer, you can upload the files directly to GitHub using your web browser:
+---
 
-### Step 1: Open the GitHub Upload Page
-1. Open your web browser and go to your repository page:
-   `https://github.com/Artaherzadeh/Apple-Podcast-Android`
-2. Since it is a new empty repository, you will see a setup screen. Click on the link that says **"uploading an existing file"** (it is in the sentence: *"...or get started by creating a new file or uploading an existing file"*).
+## ✨ Features
 
-### Step 2: Drag and Drop the Project Files
-1. Open the Windows File Explorer and navigate to your project folder:
-   `C:\Users\Alireza\.gemini\antigravity\scratch\ApplePodcastWrapper`
-2. Select all the files and folders inside this directory:
-   * `.github` (This contains the automated builder workflow)
-   * `app`
-   * `.gitignore`
-   * `build.gradle.kts`
-   * `gradle.properties`
-   * `README.md`
-   * `settings.gradle.kts`
-   
-   *(Note: If you do not see the `.github` folder, it may be hidden. In Windows File Explorer, click **View** (or **Layout** at the top) -> **Show** -> check **Hidden items** to reveal it).*
-3. Drag all these files and folders together and drop them onto the upload area in your browser.
-4. Wait for the files to finish uploading (about 15-20 seconds).
-5. Scroll down to the bottom of the page.
-6. Click the green **Commit changes** button.
+*   **📺 Native Fullscreen Experience:** Completely hides browser URL bars and navigation tabs. Integrated with Android's system bar constraints (`fitsSystemWindows`) so page headers and sign-in buttons never overlap with your status bar icons or front-camera notches.
+*   **🎵 Background Playback Optimization:** Configured to prevent Android from pausing the app's web core when minimized or when the screen is locked, allowing uninterrupted podcast streaming.
+*   **✌️ Custom Multi-Touch Menu:** Long-press with **two fingers** for 1 second anywhere on the screen to pull up a premium dark-themed options menu:
+    *   **Go Back:** Navigate to the previous page in web history.
+    *   **Force Refresh:** Force reload the current screen.
+    *   **Clear Cache:** Clear heavy image and metadata caches to free up storage, *without* logging you out of your Apple ID.
+    *   **Background Playback Setup:** Quick shortcut to disable Android's system battery limitations for continuous background audio.
+*   **📡 Custom Offline Handler:** Replaces the generic web "disconnected" error with a premium, Apple-themed offline layout featuring network warning graphics and a manual "Try Again" recovery button. Automatically detects when connectivity is restored and reloads the page.
+*   **🔒 Secure Link Routing:** Prevents external links (such as social share buttons or external advertisers) from hijacking the container. Non-Apple links automatically launch in your phone's default system browser.
 
-### Step 3: Download your APK
-1. Once committed, click on the **Actions** tab at the top of your GitHub repository page.
-2. You will see a workflow running named **Build Android APK**.
-3. Click on the active run (it will have a yellow spinning icon).
-4. Once it finishes (about 1.5 to 2 minutes), scroll down to the **Artifacts** section at the bottom.
-5. Click on **apple-podcasts-app** to download the ZIP file.
-6. Extract the ZIP file to get your `app-debug.apk`.
+---
 
-### Step 4: Install on your Samsung Galaxy A55
-1. Transfer the `app-debug.apk` file to your phone (via USB, Google Drive, email, or a messaging app).
-2. Open the **My Files** app on your Samsung phone and find the APK.
-3. Tap the file to install it. If prompted, toggle the switch to allow installing from "Unknown Sources" or your file manager.
-4. Open the **Podcasts** app on your screen!
+## 🔒 Security & Privacy
+
+Privacy is a core consideration of this project. If you plan to log in with your **Apple ID** to access your personal library and subscriptions, rest assured that this app is fully secure:
+1.  **Direct HTTPS Connection:** The application loads directly from the official Apple domain `https://podcasts.apple.com/` using secure TLS/SSL encryption.
+2.  **Zero Interception:** The app is a simple presentation container. The code contains **no trackers, analytics, or interception scripts**. Your password and Apple ID credentials go directly to Apple's authentication servers.
+3.  **Local Storage only:** Session details (login tokens) are stored directly in secure cookies and standard HTML5 LocalStorage, identical to how Google Chrome or Safari saves sessions.
+
+---
+
+## 🚀 How to Build & Install (Zero Tools Required)
+
+You do not need to install Android Studio, Java, or Gradle on your computer to build this app. You can use **GitHub Actions** to compile the APK in the cloud for free:
+
+### Step 1: Upload to your GitHub
+1. Create a new repository on your GitHub account (leave it empty without initializing a README).
+2. Drag and drop all the files from this project directory into the GitHub upload area in your browser and click **Commit changes**.
+3. Create a new file directly on GitHub named `.github/workflows/build.yml` and paste the workflow code found in `.github/workflows/build.yml` of this project.
+
+### Step 2: Download the APK
+1. Click on the **Actions** tab at the top of your GitHub repository.
+2. Select the running/completed **Build Android APK** workflow.
+3. Once completed (displays a green checkmark), scroll down to the **Artifacts** section at the bottom and download the **apple-podcasts-app** ZIP archive.
+4. Extract the ZIP file to retrieve your **`app-debug.apk`**.
+
+### Step 3: Install on Android
+1. Transfer the `.apk` file to your phone (via USB, Google Drive, email, or WhatsApp/Telegram).
+2. Open your phone's **Files** app and select the APK.
+3. Grant permission to install from "Unknown Sources" if prompted, then tap **Install**.
+
+---
+
+## 💡 Quick Tips & Configuration
+
+*   **Sign-in Retention:** Once you log in with your Apple ID, do not clear the app's *data* in Android settings, as this will clear the session cookies. Use the **Clear Cache** option inside the two-finger menu instead, which safely clears temporary files while keeping you logged in.
+*   **Background Audio cutting off?** Android's battery saver (especially on Samsung devices) aggressively kills background processes. To prevent this:
+    1. Long-press with two fingers to open the menu.
+    2. Tap **Background Playback**.
+    3. Find this app in the list and set its battery usage to **Unrestricted** (or turn off battery optimization).
