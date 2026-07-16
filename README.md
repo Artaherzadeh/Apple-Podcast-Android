@@ -1,4 +1,4 @@
-# Apple Podcasts Android Web Wrapper
+# Apple Podcasts Android
 
 A lightweight, secure, and open-source Android container that wraps the official Apple Podcasts web player into a native-feeling application. 
 
@@ -29,10 +29,21 @@ Privacy is a core consideration of this project. If you plan to log in with your
 
 ---
 
-## 💡 Quick Tips & Configuration
+## 📲 How to Install
 
-*   **Sign-in Retention:** Once you log in with your Apple ID, do not clear the app's *data* in Android settings, as this will clear the session cookies. Use the **Clear Cache** option inside the two-finger menu instead, which safely clears temporary files while keeping you logged in.
-*   **Background Audio cutting off?** Android's battery saver (especially on Samsung devices) aggressively kills background processes. To prevent this:
-    1. Long-press with two fingers to open the menu.
-    2. Tap **Background Playback**.
-    3. Find this app in the list and set its battery usage to **Unrestricted** (or turn off battery optimization).
+You can download the pre-compiled installer directly from this repository:
+
+1.  Go to the **[Releases](https://github.com/Artaherzadeh/Apple-Podcast-Android/releases/tag/latest)** section on the right-hand sidebar of this page.
+2.  Download the **`Apple Podcasts.apk`** file.
+3.  Transfer the `.apk` file to your phone (via USB, Google Drive, email, or a messaging app).
+4.  Open your phone's **Files** app, locate the downloaded file, and tap it.
+5.  If prompted, grant permission to install from "Unknown Sources", then tap **Install**.
+
+---
+
+## 🤝 Contributing & Feedback
+
+If you have suggestions, run into bugs, want to propose new features, or contribute to the codebase:
+
+*   **Report Issues / Request Features:** Please open a ticket on our **[Issues Page](https://github.com/Artaherzadeh/Apple-Podcast-Android/issues)** describing the problem or suggestion.
+*   **Contribute Code:** Feel free to create a branch, implement your changes, and submit a **Pull Request**. We welcome contributions to improve the layout, media optimizations, or gesture controls!
