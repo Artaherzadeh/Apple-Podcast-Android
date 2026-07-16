@@ -1,0 +1,15 @@
+.gradle
+/local.properties
+/.idea/caches
+/.idea/workspace.xml
+/.idea/gradle.xml
+/.idea/assetWizardSettings.xml
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+/app/build
+/build
+*.apk
+*.aar
+*.ap_
