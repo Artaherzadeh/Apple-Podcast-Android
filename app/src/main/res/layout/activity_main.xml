@@ -31,6 +31,20 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- Discoverable Floating Menu Button -->
+    <ImageButton
+        android:id="@+id/btn_menu"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_margin="16dp"
+        android:background="@drawable/floating_button_background"
+        android:src="@drawable/ic_more_vert"
+        android:scaleType="centerInside"
+        android:contentDescription="@string/desc_menu_button"
+        app:tint="@color/pure_white"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <!-- Offline Overlay UI -->
     <LinearLayout
         android:id="@+id/offline_overlay"
@@ -50,13 +64,14 @@
             android:layout_width="80dp"
             android:layout_height="80dp"
             android:src="@drawable/ic_wifi_off"
+            android:contentDescription="@string/desc_icon_wifi_off"
             app:tint="@color/purple_primary" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="Connection Lost"
+            android:text="@string/offline_title"
             android:textColor="@color/pure_white"
             android:textSize="22sp"
             android:textStyle="bold" />
@@ -65,7 +80,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Please check your internet settings and try again."
+            android:text="@string/offline_description"
             android:textColor="#888888"
             android:textSize="14sp"
             android:gravity="center" />
@@ -76,7 +91,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"
             android:backgroundTint="@color/purple_primary"
-            android:text="Try Again"
+            android:text="@string/btn_retry"
             android:textColor="@color/pure_white"
             android:paddingStart="32dp"
             android:paddingEnd="32dp"

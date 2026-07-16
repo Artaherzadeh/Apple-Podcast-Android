@@ -1,11 +1,8 @@
 package com.alireza.podcasts
 
-import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
@@ -17,19 +14,24 @@ import android.os.Looper
 import android.provider.Settings
 import android.view.MotionEvent
 import android.view.View
-import android.view.Window
+import android.view.ViewGroup
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
+import android.webkit.WebResourceResponse
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.browser.customtabs.CustomTabsIntent
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.alireza.podcasts.RoutingUtils.RouteType
 
 class MainActivity : AppCompatActivity() {
 
@@ -37,6 +39,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     private lateinit var offlineOverlay: LinearLayout
     private lateinit var btnRetry: Button
+    private lateinit var btnMenu: ImageButton
     
     private val targetUrl = "https://podcasts.apple.com/"
     
@@ -50,17 +53,22 @@ class MainActivity : AppCompatActivity() {
 
     // Connectivity monitoring
     private lateinit var connectivityManager: ConnectivityManager
+    private var wasOffline = false
+    
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
-            runOnUiThread {
-                hideOfflineState()
-            }
+            updateConnectivityUi()
+        }
+
+        override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
+            updateConnectivityUi()
         }
 
         override fun onLost(network: Network) {
-            runOnUiThread {
-                showOfflineState()
-            }
+            // Hand-off protection: wait 300ms to verify if another validated connection takes over
+            gestureHandler.postDelayed({
+                updateConnectivityUi()
+            }, 300)
         }
     }
 
@@ -72,17 +80,23 @@ class MainActivity : AppCompatActivity() {
         progressBar = findViewById(R.id.progressBar)
         offlineOverlay = findViewById(R.id.offline_overlay)
         btnRetry = findViewById(R.id.btn_retry)
+        btnMenu = findViewById(R.id.btn_menu)
 
         setupWebView()
         setupGestureDetector()
         setupConnectivityMonitor()
 
+        btnMenu.setOnClickListener {
+            showOptionMenu()
+        }
+
         btnRetry.setOnClickListener {
             if (isNetworkAvailable()) {
                 hideOfflineState()
+                wasOffline = false
                 webView.reload()
             } else {
-                Toast.makeText(this, "Still no connection. Check your Wi-Fi or data.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.toast_no_connection), Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -96,6 +110,7 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
+        // Restore state exactly once in onCreate if savedInstanceState is not null
         if (savedInstanceState != null) {
             webView.restoreState(savedInstanceState)
         } else {
@@ -103,6 +118,7 @@ class MainActivity : AppCompatActivity() {
                 webView.loadUrl(targetUrl)
             } else {
                 showOfflineState()
+                wasOffline = true
             }
         }
     }
@@ -122,7 +138,11 @@ class MainActivity : AppCompatActivity() {
 
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-                return handleUrlRouting(request.url.toString())
+                val url = request.url.toString()
+                if (request.isForMainFrame) {
+                    return handleUrlRouting(url)
+                }
+                return false
             }
 
             @Deprecated("Deprecated in Java")
@@ -142,13 +162,34 @@ class MainActivity : AppCompatActivity() {
 
             override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
                 if (request?.isForMainFrame == true) {
-                    showOfflineState()
+                    val errorCode = error?.errorCode
+                    // Only show offline warning layout for connection failures (DNS, connect, timeouts)
+                    if (errorCode == ERROR_HOST_LOOKUP || 
+                        errorCode == ERROR_CONNECT || 
+                        errorCode == ERROR_TIMEOUT || 
+                        errorCode == ERROR_UNKNOWN) {
+                        showOfflineState()
+                        wasOffline = true
+                    }
                 }
             }
 
             @Deprecated("Deprecated in Java")
             override fun onReceivedError(view: WebView?, errorCode: Int, description: String?, failingUrl: String?) {
-                showOfflineState()
+                if (errorCode == ERROR_HOST_LOOKUP || 
+                    errorCode == ERROR_CONNECT || 
+                    errorCode == ERROR_TIMEOUT || 
+                    errorCode == ERROR_UNKNOWN) {
+                    showOfflineState()
+                    wasOffline = true
+                }
+            }
+
+            override fun onReceivedHttpError(view: WebView?, request: WebResourceRequest?, errorResponse: WebResourceResponse?) {
+                if (request?.isForMainFrame == true) {
+                    val statusCode = errorResponse?.statusCode ?: return
+                    Toast.makeText(this@MainActivity, getString(R.string.toast_http_error, statusCode), Toast.LENGTH_LONG).show()
+                }
             }
         }
 
@@ -166,16 +207,45 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleUrlRouting(url: String): Boolean {
-        if (url.contains("apple.com") || url.contains("apple-dns.net")) {
-            return false
+        return when (RoutingUtils.getRouteType(url)) {
+            RouteType.INTERNAL_WEBVIEW -> {
+                false // Allow standard internal load
+            }
+            RouteType.DEEP_LINK_INTENT -> {
+                try {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    Toast.makeText(this, getString(R.string.toast_no_app_found), Toast.LENGTH_SHORT).show()
+                }
+                true
+            }
+            RouteType.EXTERNAL_CUSTOM_TAB -> {
+                openCustomTab(url)
+                true
+            }
+            RouteType.BLOCKED -> {
+                true // Block navigation silently
+            }
         }
+    }
+
+    private fun openCustomTab(url: String) {
         try {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-            startActivity(intent)
+            val customTabsIntent = CustomTabsIntent.Builder()
+                .setShowTitle(true)
+                .setShareState(CustomTabsIntent.SHARE_STATE_ON)
+                .build()
+            customTabsIntent.launchUrl(this, Uri.parse(url))
         } catch (e: Exception) {
-            e.printStackTrace()
+            try {
+                // Fallback browser intent
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                startActivity(intent)
+            } catch (ex: Exception) {
+                Toast.makeText(this, getString(R.string.toast_no_app_found), Toast.LENGTH_SHORT).show()
+            }
         }
-        return true
     }
 
     private fun setupGestureDetector() {
@@ -204,7 +274,7 @@ class MainActivity : AppCompatActivity() {
                     cancelLongPressGesture()
                 }
             }
-            false // Propagate touches to WebView so scrolling and clicking work
+            false // Propagate touches to WebView
         }
     }
 
@@ -214,45 +284,53 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showOptionMenu() {
-        val dialog = Dialog(this)
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        val dialog = BottomSheetDialog(this)
         dialog.setContentView(R.layout.dialog_menu)
-        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        
+        // Remove background overlay so top rounded corners are visible
+        dialog.window?.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+            ?.setBackgroundResource(android.R.color.transparent)
 
         val menuHome = dialog.findViewById<LinearLayout>(R.id.menu_home)
         val menuBack = dialog.findViewById<LinearLayout>(R.id.menu_back)
         val menuRefresh = dialog.findViewById<LinearLayout>(R.id.menu_refresh)
         val menuClearCache = dialog.findViewById<LinearLayout>(R.id.menu_clear_cache)
         val menuBattery = dialog.findViewById<LinearLayout>(R.id.menu_battery)
+        val menuGithub = dialog.findViewById<LinearLayout>(R.id.menu_github)
 
-        menuHome.setOnClickListener {
+        menuHome?.setOnClickListener {
             dialog.dismiss()
             webView.loadUrl(targetUrl)
         }
 
-        menuBack.setOnClickListener {
+        menuBack?.setOnClickListener {
             dialog.dismiss()
             if (webView.canGoBack()) {
                 webView.goBack()
             } else {
-                Toast.makeText(this, "No page to go back to.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.toast_no_back_page), Toast.LENGTH_SHORT).show()
             }
         }
 
-        menuRefresh.setOnClickListener {
+        menuRefresh?.setOnClickListener {
             dialog.dismiss()
             webView.reload()
         }
 
-        menuClearCache.setOnClickListener {
+        menuClearCache?.setOnClickListener {
             dialog.dismiss()
             webView.clearCache(true)
-            Toast.makeText(this, "Cache cleared successfully!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.toast_cache_cleared), Toast.LENGTH_SHORT).show()
         }
 
-        menuBattery.setOnClickListener {
+        menuBattery?.setOnClickListener {
             dialog.dismiss()
             openBatteryOptimizationSettings()
+        }
+
+        menuGithub?.setOnClickListener {
+            dialog.dismiss()
+            openCustomTab(getString(R.string.git_repo_url))
         }
 
         dialog.show()
@@ -264,13 +342,12 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         } catch (e: Exception) {
             try {
-                // Fallback to application settings
                 val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                     data = Uri.fromParts("package", packageName, null)
                 }
                 startActivity(intent)
             } catch (ex: Exception) {
-                Toast.makeText(this, "Unable to open system settings.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.toast_settings_error), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -285,7 +362,26 @@ class MainActivity : AppCompatActivity() {
     private fun isNetworkAvailable(): Boolean {
         val activeNetwork = connectivityManager.activeNetwork ?: return false
         val capabilities = connectivityManager.getNetworkCapabilities(activeNetwork) ?: return false
-        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+               capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+    }
+
+    private fun updateConnectivityUi() {
+        if (isDestroyed || isFinishing) return
+        val hasInternet = isNetworkAvailable()
+        runOnUiThread {
+            if (isDestroyed || isFinishing) return@runOnUiThread
+            if (hasInternet) {
+                hideOfflineState()
+                if (wasOffline) {
+                    wasOffline = false
+                    webView.reload()
+                }
+            } else {
+                showOfflineState()
+                wasOffline = true
+            }
+        }
     }
 
     private fun showOfflineState() {
@@ -299,19 +395,40 @@ class MainActivity : AppCompatActivity() {
         webView.visibility = View.VISIBLE
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        connectivityManager.unregisterNetworkCallback(networkCallback)
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        webView.saveState(outState)
     }
 
-    // Audio background optimization: DO NOT call webView.onPause() to keep background JavaScript and audio running.
+    override fun onDestroy() {
+        // Unregister Network Callback safely behind a guard
+        try {
+            connectivityManager.unregisterNetworkCallback(networkCallback)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        // Clean up gesture handler to prevent leak on background threads
+        gestureHandler.removeCallbacksAndMessages(null)
+
+        // Webview clean teardown
+        webView.stopLoading()
+        webView.webViewClient = WebViewClient()
+        webView.webChromeClient = WebChromeClient()
+
+        val parent = webView.parent as? ViewGroup
+        parent?.removeView(webView)
+        webView.destroy()
+
+        super.onDestroy()
+    }
+
+    // Audio background optimization: DO NOT call webView.onPause()
     override fun onPause() {
         super.onPause()
-        // Kept empty to let WebView continue playing audio in the background
     }
 
     override fun onResume() {
         super.onResume()
-        // Kept empty to match background playback optimization
     }
 }

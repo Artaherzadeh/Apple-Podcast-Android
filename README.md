@@ -1,49 +1,50 @@
-# Apple Podcasts Android
+# Apple Podcasts for Android
 
-A lightweight, secure, and open-source Android container that wraps the official Apple Podcasts web player into a native-feeling application. 
+A lightweight, secure, and open-source application that lets you enjoy Apple Podcasts directly on your Android phone. 
 
-Since Apple does not provide an official Apple Podcasts app for Android, this project bridges that gap by running the web player in a highly optimized, full-screen Android WebView with background playback capabilities, offline handling, and custom gestures.
+This project bridges the gap for Android users, running the official Apple player in a polished fullscreen layout with background playback, offline warnings, and standard mobile gestures.
 
 ---
 
 ## ✨ Features
 
-*   **📺 Native Fullscreen Experience:** Completely hides browser URL bars and navigation tabs. Integrated with Android's system bar constraints (`fitsSystemWindows`) so page headers and sign-in buttons never overlap with your status bar icons or front-camera notches.
-*   **🎵 Background Playback Optimization:** Configured to prevent Android from pausing the app's web core when minimized or when the screen is locked, allowing uninterrupted podcast streaming.
-*   **✌️ Custom Multi-Touch Menu:** Long-press with **two fingers** for 1 second anywhere on the screen to pull up a premium dark-themed options menu:
-    *   **Go Back:** Navigate to the previous page in web history.
-    *   **Force Refresh:** Force reload the current screen.
-    *   **Clear Cache:** Clear heavy image and metadata caches to free up storage, *without* logging you out of your Apple ID.
-    *   **Background Playback Setup:** Quick shortcut to disable Android's system battery limitations for continuous background audio.
-*   **📡 Custom Offline Handler:** Replaces the generic web "disconnected" error with a premium, Apple-themed offline layout featuring network warning graphics and a manual "Try Again" recovery button. Automatically detects when connectivity is restored and reloads the page.
-*   **🔒 Secure Link Routing:** Prevents external links (such as social share buttons or external advertisers) from hijacking the container. Non-Apple links automatically launch in your phone's default system browser.
+*   **📺 Immersive Fullscreen:** Automatically fits your phone's screen layout so menus and page text sit comfortably below status bar icons and camera notches.
+*   **🎵 Background Listening:** Best-effort background playback. Audio can continue playing when the app is minimized or the screen is locked (Android battery saver restrictions may apply).
+*   **✌️ Quick Controls Menu:** Tap the circular floating button in the top-right corner, or hold two fingers on the screen for 1 second, to slide up a helpful options sheet:
+    *   **Home:** Jump directly back to the Apple Podcasts homepage.
+    *   **Go Back:** Go back to the previous screen.
+    *   **Force Refresh:** Reload the current screen if it gets stuck.
+    *   **Clear Cache:** Free up phone storage space without logging you out of your Apple ID.
+    *   **Background Playback Settings:** A quick link to resolve system battery limitations for continuous audio.
+    *   **GitHub Project:** Open this page to check the source or contribute.
+*   **📡 Safe Connection Warning:** Displays a friendly warning screen if your mobile data or Wi-Fi disconnects, with an easy "Try Again" recovery button.
+*   **🔒 Safe Navigation:** Links to external sites inside episode descriptions automatically open in safe external tabs, keeping your main listening app secure.
 
 ---
 
 ## 🔒 Security & Privacy
 
-Privacy is a core consideration of this project. If you plan to log in with your **Apple ID** to access your personal library and subscriptions, rest assured that this app is fully secure:
-1.  **Direct HTTPS Connection:** The application loads directly from the official Apple domain `https://podcasts.apple.com/` using secure TLS/SSL encryption.
-2.  **Zero Interception:** The app is a simple presentation container. The code contains **no trackers, analytics, or interception scripts**. Your password and Apple ID credentials go directly to Apple's authentication servers.
-3.  **Local Storage only:** Session details (login tokens) are stored directly in secure cookies and standard HTML5 LocalStorage, identical to how Google Chrome or Safari saves sessions.
+Privacy is key:
+1.  **Direct Connection:** The app connects directly to the official, secure Apple servers (`https://podcasts.apple.com/`).
+2.  **No Interception:** The application has no tracking scripts, custom analytics, or ad servers. Session details are stored strictly on your device via standard cookies and local web storage to keep you logged in.
+3.  **Encrypted Login:** Login details are managed entirely by the standard, Google-maintained Android System WebView. Keeping your phone's WebView updated via the Play Store ensures maximum security.
 
 ---
 
 ## 📲 How to Install
 
-You can download the pre-compiled installer directly from this repository:
+You can download the latest version directly to your phone:
 
-1.  Go to the **[Releases](https://github.com/Artaherzadeh/Apple-Podcast-Android/releases/tag/latest)** section on the right-hand sidebar of this page.
-2.  Download the **`Apple Podcasts.apk`** file.
-3.  Transfer the `.apk` file to your phone (via USB, Google Drive, email, or a messaging app).
-4.  Open your phone's **Files** app, locate the downloaded file, and tap it.
-5.  If prompted, grant permission to install from "Unknown Sources", then tap **Install**.
+1.  Go to the **[Releases](https://github.com/Artaherzadeh/Apple-Podcast-Android/releases/tag/latest)** section on the right-hand sidebar.
+2.  Download the **`Apple Podcasts.apk`** installer.
+3.  Transfer the downloaded file to your phone if downloaded on a PC.
+4.  Open your phone's **Files** app, find the APK, and tap it.
+5.  If prompted, grant permission to install from "Unknown Sources," then select **Install**.
 
 ---
 
-## 🤝 Contributing & Feedback
+## 🤝 Suggestions & Feedback
 
-If you have suggestions, run into bugs, want to propose new features, or contribute to the codebase:
-
-*   **Report Issues / Request Features:** Please open a ticket on our **[Issues Page](https://github.com/Artaherzadeh/Apple-Podcast-Android/issues)** describing the problem or suggestion.
-*   **Contribute Code:** Feel free to create a branch, implement your changes, and submit a **Pull Request**. We welcome contributions to improve the layout, media optimizations, or gesture controls!
+If you have suggestions, run into bugs, want to propose new features, or contribute to this app:
+*   **Report Issues / Request Features:** Please open a ticket on our **[Issues Page](https://github.com/Artaherzadeh/Apple-Podcast-Android/issues)**.
+*   **Contribute Code:** Feel free to create a branch and submit a **Pull Request**. We welcome contributions to improve layout compatibility and gesture controls!

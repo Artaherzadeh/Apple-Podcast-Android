@@ -1,3 +1,35 @@
 <resources>
     <string name="app_name">Apple Podcasts</string>
+    <string name="offline_title">Connection Lost</string>
+    <string name="offline_description">Please check your internet settings and try again.</string>
+    <string name="btn_retry">Try Again</string>
+    
+    <!-- Menu items -->
+    <string name="menu_home_title">Home</string>
+    <string name="menu_home_desc">Return to Apple Podcasts homepage</string>
+    <string name="menu_back_title">Go Back</string>
+    <string name="menu_back_desc">Navigate to the previous page</string>
+    <string name="menu_refresh_title">Force Refresh</string>
+    <string name="menu_refresh_desc">Reload the current screen</string>
+    <string name="menu_cache_title">Clear Cache</string>
+    <string name="menu_cache_desc">Frees storage (keeps you signed in)</string>
+    <string name="menu_battery_title">Background Playback</string>
+    <string name="menu_battery_desc">Disable battery limits for uninterrupted audio</string>
+    <string name="menu_github_title">GitHub Project</string>
+    <string name="menu_github_desc">View source code and contribute</string>
+    
+    <!-- Toast and messages -->
+    <string name="toast_no_connection">Still no connection. Check your Wi-Fi or data.</string>
+    <string name="toast_no_back_page">No page to go back to.</string>
+    <string name="toast_cache_cleared">Cache cleared successfully!</string>
+    <string name="toast_no_app_found">No app found to handle this action.</string>
+    <string name="toast_settings_error">Unable to open system settings.</string>
+    <string name="toast_http_error">Server Error (%1$d). Please try again later.</string>
+    
+    <!-- Accessibility Descriptions -->
+    <string name="desc_menu_button">Open Podcast Options Menu</string>
+    <string name="desc_icon_wifi_off">No internet connection</string>
+    
+    <!-- Config values -->
+    <string name="git_repo_url">https://github.com/Artaherzadeh/Apple-Podcast-Android</string>
 </resources>

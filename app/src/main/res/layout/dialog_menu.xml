@@ -13,25 +13,6 @@
         android:background="@drawable/menu_background"
         android:padding="8dp">
 
-        <!-- Title Header -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Podcast Options"
-            android:textColor="#888888"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:textAllCaps="true"
-            android:gravity="center"
-            android:paddingTop="12dp"
-            android:paddingBottom="12dp" />
-
-        <!-- Divider -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#2C2C2E" />
-
         <!-- 1. Home -->
         <LinearLayout
             android:id="@+id/menu_home"
@@ -48,7 +29,7 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/ic_home"
-                android:contentDescription="Home"
+                android:contentDescription="@string/menu_home_title"
                 android:layout_marginEnd="16dp" />
 
             <LinearLayout
@@ -60,14 +41,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Home"
+                    android:text="@string/menu_home_title"
                     android:textColor="@color/pure_white"
                     android:textSize="16sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Return to Apple Podcasts homepage"
+                    android:text="@string/menu_home_desc"
                     android:textColor="#888888"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -95,7 +76,7 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/ic_arrow_back"
-                android:contentDescription="Back"
+                android:contentDescription="@string/menu_back_title"
                 android:layout_marginEnd="16dp" />
 
             <LinearLayout
@@ -107,14 +88,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Go Back"
+                    android:text="@string/menu_back_title"
                     android:textColor="@color/pure_white"
                     android:textSize="16sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Navigate to the previous page"
+                    android:text="@string/menu_back_desc"
                     android:textColor="#888888"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -142,7 +123,7 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/ic_refresh"
-                android:contentDescription="Refresh"
+                android:contentDescription="@string/menu_refresh_title"
                 android:layout_marginEnd="16dp" />
 
             <LinearLayout
@@ -154,14 +135,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Force Refresh"
+                    android:text="@string/menu_refresh_title"
                     android:textColor="@color/pure_white"
                     android:textSize="16sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Reload the current screen"
+                    android:text="@string/menu_refresh_desc"
                     android:textColor="#888888"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -189,7 +170,7 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/ic_delete"
-                android:contentDescription="Clear Cache"
+                android:contentDescription="@string/menu_cache_title"
                 android:layout_marginEnd="16dp" />
 
             <LinearLayout
@@ -201,14 +182,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Clear Cache"
+                    android:text="@string/menu_cache_title"
                     android:textColor="@color/pure_white"
                     android:textSize="16sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Frees storage (keeps you signed in)"
+                    android:text="@string/menu_cache_desc"
                     android:textColor="#888888"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -236,7 +217,7 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/ic_battery"
-                android:contentDescription="Background Settings"
+                android:contentDescription="@string/menu_battery_title"
                 android:layout_marginEnd="16dp" />
 
             <LinearLayout
@@ -248,14 +229,61 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Background Playback"
+                    android:text="@string/menu_battery_title"
                     android:textColor="@color/pure_white"
                     android:textSize="16sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Disable battery limits for uninterrupted audio"
+                    android:text="@string/menu_battery_desc"
+                    android:textColor="#888888"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#2C2C2E" />
+
+        <!-- 6. GitHub Repository Link -->
+        <LinearLayout
+            android:id="@+id/menu_github"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="16dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?android:attr/selectableItemBackground">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_github"
+                android:contentDescription="@string/menu_github_title"
+                android:layout_marginEnd="16dp" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/menu_github_title"
+                    android:textColor="@color/pure_white"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/menu_github_desc"
                     android:textColor="#888888"
                     android:textSize="12sp" />
             </LinearLayout>
