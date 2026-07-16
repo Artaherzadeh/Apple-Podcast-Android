@@ -29,28 +29,6 @@ Privacy is a core consideration of this project. If you plan to log in with your
 
 ---
 
-## 🚀 How to Build & Install (Zero Tools Required)
-
-You do not need to install Android Studio, Java, or Gradle on your computer to build this app. You can use **GitHub Actions** to compile the APK in the cloud for free:
-
-### Step 1: Upload to your GitHub
-1. Create a new repository on your GitHub account (leave it empty without initializing a README).
-2. Drag and drop all the files from this project directory into the GitHub upload area in your browser and click **Commit changes**.
-3. Create a new file directly on GitHub named `.github/workflows/build.yml` and paste the workflow code found in `.github/workflows/build.yml` of this project.
-
-### Step 2: Download the APK
-1. Click on the **Actions** tab at the top of your GitHub repository.
-2. Select the running/completed **Build Android APK** workflow.
-3. Once completed (displays a green checkmark), scroll down to the **Artifacts** section at the bottom and download the **apple-podcasts-app** ZIP archive.
-4. Extract the ZIP file to retrieve your **`app-debug.apk`**.
-
-### Step 3: Install on Android
-1. Transfer the `.apk` file to your phone (via USB, Google Drive, email, or WhatsApp/Telegram).
-2. Open your phone's **Files** app and select the APK.
-3. Grant permission to install from "Unknown Sources" if prompted, then tap **Install**.
-
----
-
 ## 💡 Quick Tips & Configuration
 
 *   **Sign-in Retention:** Once you log in with your Apple ID, do not clear the app's *data* in Android settings, as this will clear the session cookies. Use the **Clear Cache** option inside the two-finger menu instead, which safely clears temporary files while keeping you logged in.
