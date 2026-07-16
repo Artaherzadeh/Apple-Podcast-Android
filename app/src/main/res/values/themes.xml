@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Base application theme -->
-    <style name="Theme.ApplePodcastWrapper" parent="Theme.NoTitleBar">
+    <style name="Theme.ApplePodcastWrapper" parent="Theme.AppCompat.NoActionBar">
         <!-- Status and Navigation Bars -->
         <item name="android:windowLightStatusBar" tools:targetApi="m" xmlns:tools="http://schemas.google.com/tools">false</item>
         <item name="android:windowFullscreen">false</item>
