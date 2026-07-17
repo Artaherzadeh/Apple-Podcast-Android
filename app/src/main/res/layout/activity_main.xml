@@ -141,7 +141,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_margin="12dp"
-        android:layout_marginBottom="92dp"
+        android:layout_marginBottom="72dp"
         android:visibility="gone"
         app:cardBackgroundColor="#1C1C1E"
         app:cardCornerRadius="12dp"
@@ -162,7 +162,7 @@
                 android:id="@+id/img_download_icon"
                 android:layout_width="28dp"
                 android:layout_height="28dp"
-                android:src="@drawable/ic_download"
+                android:src="@drawable/ic_music_note"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent" />
@@ -172,19 +172,22 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:layout_marginStart="16dp"
-                android:layout_marginEnd="16dp"
+                android:layout_marginEnd="12dp"
                 app:layout_constraintStart_toEndOf="@id/img_download_icon"
-                app:layout_constraintEnd_toStartOf="@id/btn_close_banner"
+                app:layout_constraintEnd_toStartOf="@id/btn_banner_download"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent">
 
                 <TextView
+                    android:id="@+id/txt_download_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Download Episode"
+                    android:text="Episode Title"
                     android:textColor="@color/pure_white"
                     android:textSize="13sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
                 <TextView
                     android:id="@+id/txt_download_details"
@@ -196,6 +199,36 @@
                     android:textSize="11sp"
                     android:maxLines="1"
                     android:ellipsize="end" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/btn_banner_download"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:padding="6dp"
+                android:layout_marginEnd="8dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?android:attr/selectableItemBackground"
+                app:layout_constraintEnd_toStartOf="@id/btn_close_banner"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+                
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_download" />
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="Download"
+                    android:textColor="@color/pure_white"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
             </LinearLayout>
 
             <ImageView
