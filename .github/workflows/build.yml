@@ -31,21 +31,14 @@ jobs:
     - name: Run Unit Tests
       run: ./gradlew test
 
-    - name: Generate and Commit Consistent Keystore
+    - name: Ensure Keystore Exists
       run: |
         if [ ! -f app/debug.keystore ]; then
-          echo "Generating consistent keystore..."
+          echo "WARNING: Consistent keystore app/debug.keystore is missing! Generating a temporary local fallback."
           keytool -genkey -v -keystore app/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug, O=Android, C=US"
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add app/debug.keystore
-          git commit -m "chore: add consistent debug keystore for reproducible builds"
-          git push origin main
         else
-          echo "Consistent keystore already exists."
+          echo "Consistent keystore found."
         fi
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build Debug APK
       run: ./gradlew assembleDebug
