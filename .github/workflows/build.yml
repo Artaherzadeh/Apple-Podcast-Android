@@ -7,11 +7,13 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Validate Gradle Wrapper
       uses: gradle/actions/wrapper-validation@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
@@ -29,17 +31,33 @@ jobs:
     - name: Run Unit Tests
       run: ./gradlew test
 
+    - name: Generate and Commit Consistent Keystore
+      run: |
+        if [ ! -f app/debug.keystore ]; then
+          echo "Generating consistent keystore..."
+          keytool -genkey -v -keystore app/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug, O=Android, C=US"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add app/debug.keystore
+          git commit -m "chore: add consistent debug keystore for reproducible builds"
+          git push origin main
+        else
+          echo "Consistent keystore already exists."
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Build Debug APK
       run: ./gradlew assembleDebug
 
     - name: Rename APK file
-      run: mv app/build/outputs/apk/debug/app-debug.apk "app/build/outputs/apk/debug/Apple Podcasts.apk"
+      run: mv app/build/outputs/apk/debug/app-debug.apk "app/build/outputs/apk/debug/Apple_Podcasts_v1.1_build_${{ github.run_number }}.apk"
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: apple-podcasts-app
-        path: "app/build/outputs/apk/debug/Apple Podcasts.apk"
+        path: "app/build/outputs/apk/debug/Apple_Podcasts_v1.1_build_${{ github.run_number }}.apk"
 
   release:
     runs-on: ubuntu-latest
@@ -58,12 +76,10 @@ jobs:
     - name: Create or Update Release
       uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1.21.0
       with:
-        artifacts: "release-out/Apple Podcasts.apk"
-        tag: "latest"
-        name: "Apple Podcasts Android App (Latest)"
-        body: "Automated rolling release containing the latest compiled APK. Click `Apple Podcasts.apk` below to download and install."
+        artifacts: "release-out/Apple_Podcasts_v1.1_build_${{ github.run_number }}.apk"
+        tag: "v1.1-build${{ github.run_number }}"
+        name: "Apple Podcasts Android App v1.1 (Build ${{ github.run_number }})"
+        body: "Automated release containing the compiled APK. Download the APK asset below to install. This build is signed with a consistent debug keystore to support updates without reinstallation."
         generateReleaseNotes: true
         allowUpdates: true
-        removeArtifacts: true
-        replacesArtifacts: true
         token: ${{ secrets.GITHUB_TOKEN }}
