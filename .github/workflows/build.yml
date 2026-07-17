@@ -44,13 +44,13 @@ jobs:
       run: ./gradlew assembleDebug
 
     - name: Rename APK file
-      run: mv app/build/outputs/apk/debug/app-debug.apk "app/build/outputs/apk/debug/Apple Podcasts.apk"
+      run: mv app/build/outputs/apk/debug/app-debug.apk "app/build/outputs/apk/debug/Apple.Podcasts.apk"
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: apple-podcasts-app
-        path: "app/build/outputs/apk/debug/Apple Podcasts.apk"
+        path: "app/build/outputs/apk/debug/Apple.Podcasts.apk"
 
   release:
     runs-on: ubuntu-latest
@@ -69,10 +69,11 @@ jobs:
     - name: Create or Update Release
       uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1.21.0
       with:
-        artifacts: "release-out/Apple Podcasts.apk"
+        artifacts: "release-out/Apple.Podcasts.apk"
         tag: "v1.1"
         name: "Apple Podcasts v1.1"
         body: "Automated release of Apple Podcasts for Android. Download Apple Podcasts.apk below to install. Signed with reproducible keystore."
         generateReleaseNotes: false
         allowUpdates: true
+        removeArtifacts: true
         token: ${{ secrets.GITHUB_TOKEN }}
