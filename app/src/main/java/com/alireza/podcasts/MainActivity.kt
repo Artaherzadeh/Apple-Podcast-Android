@@ -710,6 +710,28 @@ class MainActivity : AppCompatActivity() {
                             textSpan.innerText = 'Download Episode';
                         }
                         
+                        const iconContainer = button.querySelector('.contextual-menu-item__icon-container');
+                        if (iconContainer) {
+                            iconContainer.innerHTML = '';
+                            var svgNS = 'http://www.w3.org/2000/svg';
+                            var svg = document.createElementNS(svgNS, 'svg');
+                            svg.setAttribute('viewBox', '0 0 24 24');
+                            svg.setAttribute('fill', 'none');
+                            svg.setAttribute('width', '20');
+                            svg.setAttribute('height', '20');
+                            svg.style.cssText = 'width:20px;height:20px;fill:none;';
+                            var p = document.createElementNS(svgNS, 'path');
+                            p.setAttribute('d', 'M21 15V16.2C21 17.8802 21 18.7202 20.673 19.362C20.3854 19.9265 19.9265 20.3854 19.362 20.673C18.7202 21 17.8802 21 16.2 21H7.8C6.11984 21 5.27976 21 4.63803 20.673C4.07354 20.3854 3.6146 19.9265 3.32698 19.362C3 18.7202 3 17.8802 3 16.2V15M17 10L12 15M12 15L7 10M12 15V3');
+                            p.setAttribute('fill', 'none');
+                            p.setAttribute('stroke', '#E5E5EA');
+                            p.setAttribute('stroke-width', '2');
+                            p.setAttribute('stroke-linecap', 'round');
+                            p.setAttribute('stroke-linejoin', 'round');
+                            p.style.cssText = 'fill:none;stroke:#E5E5EA;';
+                            svg.appendChild(p);
+                            iconContainer.appendChild(svg);
+                        }
+                        
                         button.onclick = function(e) {
                             e.stopPropagation();
                             e.preventDefault();
