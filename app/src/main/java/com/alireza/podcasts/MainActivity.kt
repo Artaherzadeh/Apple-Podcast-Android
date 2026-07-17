@@ -54,6 +54,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var downloadBanner: View
     private lateinit var txtDownloadDetails: TextView
     private lateinit var btnCloseBanner: View
+    private lateinit var btnDownloadAction: View
     private var currentStreamUrl = ""
     private var dismissedStreamUrl = ""
     private var currentTrackTitle = "Episode"
@@ -99,7 +100,17 @@ class MainActivity : AppCompatActivity() {
                 MediaPlaybackService.BROADCAST_PLAY -> {
                     webView.post {
                         webView.evaluateJavascript(
-                            "const v = document.querySelector('video, audio'); if (v) v.play();", 
+                            """
+                            (function() {
+                                const playBtn = document.querySelector('button.playback-play__play');
+                                if (playBtn) {
+                                    playBtn.click();
+                                } else {
+                                    const v = document.querySelector('video, audio');
+                                    if (v) v.play();
+                                }
+                            })();
+                            """.trimIndent(), 
                             null
                         )
                     }
@@ -107,7 +118,17 @@ class MainActivity : AppCompatActivity() {
                 MediaPlaybackService.BROADCAST_PAUSE -> {
                     webView.post {
                         webView.evaluateJavascript(
-                            "const v = document.querySelector('video, audio'); if (v) v.pause();", 
+                            """
+                            (function() {
+                                const pauseBtn = document.querySelector('button.playback-play__pause');
+                                if (pauseBtn) {
+                                    pauseBtn.click();
+                                } else {
+                                    const v = document.querySelector('video, audio');
+                                    if (v) v.pause();
+                                }
+                            })();
+                            """.trimIndent(), 
                             null
                         )
                     }
@@ -152,6 +173,7 @@ class MainActivity : AppCompatActivity() {
         downloadBanner = findViewById(R.id.download_banner)
         txtDownloadDetails = findViewById(R.id.txt_download_details)
         btnCloseBanner = findViewById(R.id.btn_close_banner)
+        btnDownloadAction = findViewById(R.id.btn_download_action)
 
         setupWebView()
         setupGestureDetector()
@@ -176,6 +198,10 @@ class MainActivity : AppCompatActivity() {
         btnCloseBanner.setOnClickListener {
             downloadBanner.visibility = View.GONE
             dismissedStreamUrl = currentStreamUrl
+        }
+
+        btnDownloadAction.setOnClickListener {
+            triggerPodcastDownload()
         }
 
         downloadBanner.setOnClickListener {
@@ -410,6 +436,7 @@ class MainActivity : AppCompatActivity() {
         val menuBack = dialog.findViewById<LinearLayout>(R.id.menu_back)
         val menuRefresh = dialog.findViewById<LinearLayout>(R.id.menu_refresh)
         val menuClearCache = dialog.findViewById<LinearLayout>(R.id.menu_clear_cache)
+        val menuDownload = dialog.findViewById<LinearLayout>(R.id.menu_download)
         val menuBattery = dialog.findViewById<LinearLayout>(R.id.menu_battery)
         val menuGithub = dialog.findViewById<LinearLayout>(R.id.menu_github)
 
@@ -435,10 +462,16 @@ class MainActivity : AppCompatActivity() {
         menuClearCache?.setOnClickListener {
             dialog.dismiss()
             webView.clearCache(true)
+            webView.reload() // Force page reload after cache clearing
             // Reset overlay state so it shows up again on next launch
             getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
                 .edit().putBoolean("has_seen_overlay_v1", false).apply()
             Toast.makeText(this, getString(R.string.toast_cache_cleared), Toast.LENGTH_SHORT).show()
+        }
+
+        menuDownload?.setOnClickListener {
+            dialog.dismiss()
+            triggerPodcastDownload()
         }
 
         menuBattery?.setOnClickListener {
@@ -557,9 +590,27 @@ class MainActivity : AppCompatActivity() {
                     const position = Math.floor((video.currentTime || 0) * 1000);
                     const streamUrl = video.src || '';
 
-                    // Extract title and artist using selectors from Apple Podcast site structure
-                    const titleEl = document.querySelector('.product-header__title, .audio-player__title, [class*="title"], .episode-metadata__primary .marquee-line__fragment');
-                    const artistEl = document.querySelector('.product-header__subtitle, .audio-player__subtitle, [class*="subtitle"], .episode-metadata__secondary button.lcd-meta-line__fragment');
+                    // Extract episode title strictly from mini-player marquee primary first
+                    let title = '';
+                    const primaryEl = document.querySelector('.player-lcd__metadata .marquee--primary [data-testid="marquee-text-item"], .player-lcd__metadata .marquee--primary .marquee-line__fragment, .audio-player__title');
+                    if (primaryEl) {
+                        title = primaryEl.innerText.trim();
+                    }
+                    if (!title) {
+                        const titleEl = document.querySelector('.product-header__title, .audio-player__title, [class*="title"], .episode-metadata__primary .marquee-line__fragment');
+                        title = titleEl ? titleEl.innerText.trim() : 'Apple Podcasts';
+                    }
+
+                    // Extract podcast/show title strictly from show link or page header
+                    let artist = '';
+                    const showLink = document.querySelector('.episode-header__show-link, .podcast-header__show-link, .product-header__title, [class*="show-link"]');
+                    if (showLink) {
+                        artist = showLink.innerText.trim();
+                    }
+                    if (!artist) {
+                        const artistEl = document.querySelector('.product-header__subtitle, .audio-player__subtitle, [class*="subtitle"], .episode-metadata__secondary button.lcd-meta-line__fragment');
+                        artist = artistEl ? artistEl.innerText.trim() : 'Playing';
+                    }
                     
                     let img = '';
                     const artworkContainer = document.querySelector('.artwork-container');
@@ -584,9 +635,6 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
 
-                    const title = titleEl ? titleEl.innerText.trim() : 'Apple Podcasts';
-                    const artist = artistEl ? artistEl.innerText.trim() : 'Playing';
-
                     // Only bridge if playback details actually changed (avoid constant JNI overhead)
                     if (isPlaying !== lastPlaying || title !== lastTitle || artist !== lastArtist || img !== lastImg || Math.abs(duration - lastDuration) > 2000 || Math.abs(position - lastPosition) > 2000) {
                         lastPlaying = isPlaying;
@@ -599,7 +647,59 @@ class MainActivity : AppCompatActivity() {
                         AndroidMediaBridge.onPlaybackStateChanged(isPlaying, title, artist, img, duration, position, streamUrl);
                     }
                 }
+
+                // Inject Download option inside Apple's native contextual menu DOM
+                function injectDownloadMenuItem() {
+                    const menuList = document.querySelector('.contextual-menu__list');
+                    if (!menuList) return;
+                    if (menuList.querySelector('.custom-download-item')) return;
+                    
+                    const li = document.createElement('li');
+                    li.className = 'contextual-menu-item custom-download-item';
+                    
+                    const button = document.createElement('button');
+                    button.title = 'Download Episode';
+                    button.type = 'button';
+                    button.style.width = '100%';
+                    button.style.textAlign = 'left';
+                    button.style.background = 'transparent';
+                    button.style.border = 'none';
+                    button.style.padding = '0';
+                    
+                    const wrapper = document.createElement('span');
+                    wrapper.className = 'contextual-menu-item__option-wrapper';
+                    
+                    const text = document.createElement('span');
+                    text.className = 'contextual-menu-item__option-text';
+                    text.innerText = 'Download Episode';
+                    
+                    const iconContainer = document.createElement('span');
+                    iconContainer.className = 'contextual-menu-item__icon-container';
+                    
+                    iconContainer.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; margin-top: 4px;">
+                            <path d="M21 15V16.2C21 17.8802 21 18.7202 20.673 19.362C20.3854 19.9265 19.9265 20.3854 19.362 20.673C18.7202 21 17.8802 21 16.2 21H7.8C6.11984 21 5.27976 21 4.63803 20.673C4.07354 20.3854 3.6146 19.9265 3.32698 19.362C3 18.7202 3 17.8802 3 16.2V15M17 10L12 15M12 15L7 10M12 15V3"></path>
+                        </svg>
+                    `;
+                    
+                    wrapper.appendChild(text);
+                    wrapper.appendChild(iconContainer);
+                    button.appendChild(wrapper);
+                    li.appendChild(button);
+                    
+                    button.onclick = function(e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        const trigger = document.querySelector('.contextual-menu__trigger');
+                        if (trigger) trigger.click();
+                        AndroidMediaBridge.triggerDownload();
+                    };
+                    
+                    menuList.appendChild(li);
+                }
+
                 setInterval(syncPlayerState, 1000);
+                setInterval(injectDownloadMenuItem, 300);
             })();
         """.trimIndent()
         webView.evaluateJavascript(js, null)
@@ -682,6 +782,13 @@ class MainActivity : AppCompatActivity() {
                 startService(intent)
             }
         }
+
+        @android.webkit.JavascriptInterface
+        fun triggerDownload() {
+            runOnUiThread {
+                triggerPodcastDownload()
+            }
+        }
     }
 
     private fun handleStreamUrlUpdate(streamUrl: String, title: String, artist: String) {
@@ -695,7 +802,8 @@ class MainActivity : AppCompatActivity() {
             
             // Reset visibility if this is a new track
             if (currentStreamUrl != dismissedStreamUrl) {
-                txtDownloadDetails.text = "$title\n$artist\nURL: $streamUrl"
+                // Show ONLY the podcast show name (artist) to avoid episode title clutter
+                txtDownloadDetails.text = artist
                 downloadBanner.visibility = View.VISIBLE
             }
         } else {

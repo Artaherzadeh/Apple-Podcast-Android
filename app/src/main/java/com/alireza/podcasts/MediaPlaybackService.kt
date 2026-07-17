@@ -17,6 +17,7 @@ import androidx.media.app.NotificationCompat.MediaStyle
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.support.v4.media.MediaMetadataCompat
+import androidx.media.session.MediaButtonReceiver
 import java.net.URL
 import kotlin.concurrent.thread
 
@@ -61,6 +62,11 @@ class MediaPlaybackService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent == null) return START_NOT_STICKY
+
+        if (Intent.ACTION_MEDIA_BUTTON == intent.action) {
+            MediaButtonReceiver.handleIntent(mediaSession, intent)
+            return START_STICKY
+        }
 
         when (intent.action) {
             ACTION_UPDATE_STATE -> {
@@ -117,6 +123,15 @@ class MediaPlaybackService : Service() {
     private fun setupMediaSession() {
         mediaSession = MediaSessionCompat(this, "ApplePodcastsSession").apply {
             isActive = true
+            setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS)
+            
+            val mediaButtonIntent = Intent(Intent.ACTION_MEDIA_BUTTON, null, this@MediaPlaybackService, MediaButtonReceiver::class.java)
+            val mediaButtonPendingIntent = PendingIntent.getBroadcast(
+                this@MediaPlaybackService, 0, mediaButtonIntent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+            setMediaButtonReceiver(mediaButtonPendingIntent)
+
             setCallback(object : MediaSessionCompat.Callback() {
                 override fun onPlay() {
                     isPlaying = true

@@ -140,7 +140,8 @@
         android:id="@+id/download_banner"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
+        android:layout_margin="12dp"
+        android:layout_marginBottom="92dp"
         android:visibility="gone"
         app:cardBackgroundColor="#1C1C1E"
         app:cardCornerRadius="12dp"
@@ -152,13 +153,13 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="16dp">
+            android:padding="12dp">
 
             <ImageView
-                android:id="@+id/img_download_icon"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:src="@drawable/ic_download"
+                android:id="@+id/img_music_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_music"
                 app:tint="@color/purple_primary"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
@@ -168,10 +169,10 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginStart="16dp"
-                android:layout_marginEnd="16dp"
-                app:layout_constraintStart_toEndOf="@id/img_download_icon"
-                app:layout_constraintEnd_toStartOf="@id/btn_close_banner"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                app:layout_constraintStart_toEndOf="@id/img_music_icon"
+                app:layout_constraintEnd_toStartOf="@id/banner_actions_container"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent">
 
@@ -180,33 +181,52 @@
                     android:layout_height="wrap_content"
                     android:text="Download Episode"
                     android:textColor="@color/pure_white"
-                    android:textSize="14sp"
+                    android:textSize="13sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/txt_download_details"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="Podcast Episode"
+                    android:layout_marginTop="1dp"
+                    android:text="Podcast Show"
                     android:textColor="#888888"
-                    android:textSize="12sp"
-                    android:maxLines="2"
+                    android:textSize="11sp"
+                    android:maxLines="1"
                     android:ellipsize="end" />
             </LinearLayout>
 
-            <ImageView
-                android:id="@+id/btn_close_banner"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_close"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
-                app:tint="#888888"
+            <LinearLayout
+                android:id="@+id/banner_actions_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent" />
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <ImageView
+                    android:id="@+id/btn_download_action"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="12dp"
+                    android:src="@drawable/ic_download"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    app:tint="@color/purple_primary" />
+
+                <ImageView
+                    android:id="@+id/btn_close_banner"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_close"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    app:tint="#888888" />
+            </LinearLayout>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.cardview.widget.CardView>
