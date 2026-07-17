@@ -94,6 +94,27 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Shared JS helper: search for an element by selector, including inside Shadow DOM roots
+    private val findElementJS = """
+        function findElement(selector) {
+            var el = document.querySelector(selector);
+            if (el) return el;
+            function searchShadow(root) {
+                var found = root.querySelector(selector);
+                if (found) return found;
+                var children = root.querySelectorAll('*');
+                for (var i = 0; i < children.length; i++) {
+                    if (children[i].shadowRoot) {
+                        found = searchShadow(children[i].shadowRoot);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            }
+            return searchShadow(document);
+        }
+    """.trimIndent()
+
     // Shared JS helper to find the audio/video element (tries standard DOM first, then Shadow roots)
     private val findAudioJS = """
         function findAudioElement() {
@@ -123,7 +144,14 @@ class MainActivity : AppCompatActivity() {
                 MediaPlaybackService.BROADCAST_PLAY -> {
                     webView.post {
                         webView.evaluateJavascript(
-                            "(function() { $findAudioJS var v = findAudioElement(); if (v) v.play(); })();",
+                            """(function() {
+                                $findElementJS
+                                var btn = findElement('.playback-play__play');
+                                if (btn) { btn.click(); return; }
+                                $findAudioJS
+                                var v = findAudioElement();
+                                if (v) v.play();
+                            })();""",
                             null
                         )
                     }
@@ -131,7 +159,14 @@ class MainActivity : AppCompatActivity() {
                 MediaPlaybackService.BROADCAST_PAUSE -> {
                     webView.post {
                         webView.evaluateJavascript(
-                            "(function() { $findAudioJS var v = findAudioElement(); if (v) v.pause(); })();",
+                            """(function() {
+                                $findElementJS
+                                var btn = findElement('.playback-play__pause');
+                                if (btn) { btn.click(); return; }
+                                $findAudioJS
+                                var v = findAudioElement();
+                                if (v) v.pause();
+                            })();""",
                             null
                         )
                     }
@@ -717,9 +752,7 @@ class MainActivity : AppCompatActivity() {
                             var svg = document.createElementNS(svgNS, 'svg');
                             svg.setAttribute('viewBox', '0 0 24 24');
                             svg.setAttribute('fill', 'none');
-                            svg.setAttribute('width', '20');
-                            svg.setAttribute('height', '20');
-                            svg.style.cssText = 'width:20px;height:20px;fill:none;';
+                            svg.style.cssText = 'width:100%;height:100%;display:block;fill:none;';
                             var p = document.createElementNS(svgNS, 'path');
                             p.setAttribute('d', 'M21 15V16.2C21 17.8802 21 18.7202 20.673 19.362C20.3854 19.9265 19.9265 20.3854 19.362 20.673C18.7202 21 17.8802 21 16.2 21H7.8C6.11984 21 5.27976 21 4.63803 20.673C4.07354 20.3854 3.6146 19.9265 3.32698 19.362C3 18.7202 3 17.8802 3 16.2V15M17 10L12 15M12 15L7 10M12 15V3');
                             p.setAttribute('fill', 'none');
