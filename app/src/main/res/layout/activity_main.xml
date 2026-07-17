@@ -141,7 +141,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_margin="12dp"
-        android:layout_marginBottom="72dp"
+        android:layout_marginBottom="130dp"
         android:visibility="gone"
         app:cardBackgroundColor="#1C1C1E"
         app:cardCornerRadius="12dp"
@@ -219,14 +219,15 @@
                 <ImageView
                     android:layout_width="16dp"
                     android:layout_height="16dp"
-                    android:src="@drawable/ic_download" />
+                    android:src="@drawable/ic_download"
+                    app:tint="@color/purple_primary" />
                 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
                     android:text="Download"
-                    android:textColor="@color/pure_white"
+                    android:textColor="@color/purple_primary"
                     android:textSize="12sp"
                     android:textStyle="bold" />
             </LinearLayout>
