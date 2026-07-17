@@ -54,7 +54,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var downloadBanner: View
     private lateinit var txtDownloadDetails: TextView
     private lateinit var btnCloseBanner: View
-    private lateinit var btnDownloadAction: View
+    private var lastSeekTime = 0L
     private var currentStreamUrl = ""
     private var dismissedStreamUrl = ""
     private var currentTrackTitle = "Episode"
@@ -102,13 +102,23 @@ class MainActivity : AppCompatActivity() {
                         webView.evaluateJavascript(
                             """
                             (function() {
-                                const playBtn = document.querySelector('button.playback-play__play');
-                                if (playBtn) {
-                                    playBtn.click();
-                                } else {
-                                    const v = document.querySelector('video, audio');
-                                    if (v) v.play();
+                                function findAudioElement() {
+                                    function findRecursive(root) {
+                                        const video = root.querySelector('video, audio');
+                                        if (video) return video;
+                                        const elements = root.querySelectorAll('*');
+                                        for (const el of elements) {
+                                            if (el.shadowRoot) {
+                                                const found = findRecursive(el.shadowRoot);
+                                                if (found) return found;
+                                            }
+                                        }
+                                        return null;
+                                    }
+                                    return findRecursive(document);
                                 }
+                                const v = findAudioElement();
+                                if (v) v.play();
                             })();
                             """.trimIndent(), 
                             null
@@ -120,13 +130,23 @@ class MainActivity : AppCompatActivity() {
                         webView.evaluateJavascript(
                             """
                             (function() {
-                                const pauseBtn = document.querySelector('button.playback-play__pause');
-                                if (pauseBtn) {
-                                    pauseBtn.click();
-                                } else {
-                                    const v = document.querySelector('video, audio');
-                                    if (v) v.pause();
+                                function findAudioElement() {
+                                    function findRecursive(root) {
+                                        const video = root.querySelector('video, audio');
+                                        if (video) return video;
+                                        const elements = root.querySelectorAll('*');
+                                        for (const el of elements) {
+                                            if (el.shadowRoot) {
+                                                const found = findRecursive(el.shadowRoot);
+                                                if (found) return found;
+                                            }
+                                        }
+                                        return null;
+                                    }
+                                    return findRecursive(document);
                                 }
+                                const v = findAudioElement();
+                                if (v) v.pause();
                             })();
                             """.trimIndent(), 
                             null
@@ -135,9 +155,30 @@ class MainActivity : AppCompatActivity() {
                 }
                 MediaPlaybackService.BROADCAST_SEEK -> {
                     val seekPos = intent.getLongExtra(MediaPlaybackService.EXTRA_SEEK_POS, 0L)
+                    lastSeekTime = System.currentTimeMillis() // Set seek cool-down timestamp
                     webView.post {
                         webView.evaluateJavascript(
-                            "const v = document.querySelector('video, audio'); if (v) v.currentTime = ${seekPos / 1000.0};", 
+                            """
+                            (function() {
+                                function findAudioElement() {
+                                    function findRecursive(root) {
+                                        const video = root.querySelector('video, audio');
+                                        if (video) return video;
+                                        const elements = root.querySelectorAll('*');
+                                        for (const el of elements) {
+                                            if (el.shadowRoot) {
+                                                const found = findRecursive(el.shadowRoot);
+                                                if (found) return found;
+                                            }
+                                        }
+                                        return null;
+                                    }
+                                    return findRecursive(document);
+                                }
+                                const v = findAudioElement();
+                                if (v) v.currentTime = ${seekPos / 1000.0};
+                            })();
+                            """.trimIndent(), 
                             null
                         )
                     }
@@ -173,7 +214,6 @@ class MainActivity : AppCompatActivity() {
         downloadBanner = findViewById(R.id.download_banner)
         txtDownloadDetails = findViewById(R.id.txt_download_details)
         btnCloseBanner = findViewById(R.id.btn_close_banner)
-        btnDownloadAction = findViewById(R.id.btn_download_action)
 
         setupWebView()
         setupGestureDetector()
@@ -198,10 +238,6 @@ class MainActivity : AppCompatActivity() {
         btnCloseBanner.setOnClickListener {
             downloadBanner.visibility = View.GONE
             dismissedStreamUrl = currentStreamUrl
-        }
-
-        btnDownloadAction.setOnClickListener {
-            triggerPodcastDownload()
         }
 
         downloadBanner.setOnClickListener {
@@ -580,9 +616,36 @@ class MainActivity : AppCompatActivity() {
                 let lastImg = '';
                 let lastDuration = 0;
                 let lastPosition = 0;
+
+                // Recursive function to search for audio elements inside custom element Shadow roots
+                function findAudioElement() {
+                    function findRecursive(root) {
+                        const video = root.querySelector('video, audio');
+                        if (video) return video;
+                        const elements = root.querySelectorAll('*');
+                        for (const el of elements) {
+                            if (el.shadowRoot) {
+                                const found = findRecursive(el.shadowRoot);
+                                if (found) return found;
+                            }
+                        }
+                        return null;
+                    }
+                    return findRecursive(document);
+                }
+
+                // Helper to clean scraped text and ignore promotional copy
+                function cleanText(text) {
+                    if (!text) return '';
+                    const lower = text.toLowerCase();
+                    if (lower.includes("sign in") || lower.includes("sign up") || lower.includes("save your place") || lower.includes("follow shows") || lower.includes("downloading shows") || lower.includes("subscription benefits") || lower.includes("guest")) {
+                        return '';
+                    }
+                    return text.trim();
+                }
                 
                 function syncPlayerState() {
-                    const video = document.querySelector('video, audio');
+                    const video = findAudioElement();
                     if (!video) return;
 
                     const isPlaying = !video.paused;
@@ -590,26 +653,37 @@ class MainActivity : AppCompatActivity() {
                     const position = Math.floor((video.currentTime || 0) * 1000);
                     const streamUrl = video.src || '';
 
-                    // Extract episode title strictly from mini-player marquee primary first
+                    // Prioritize extracting metadata from Apple's bottom mini player LCD marquees
                     let title = '';
-                    const primaryEl = document.querySelector('.player-lcd__metadata .marquee--primary [data-testid="marquee-text-item"], .player-lcd__metadata .marquee--primary .marquee-line__fragment, .audio-player__title');
-                    if (primaryEl) {
-                        title = primaryEl.innerText.trim();
-                    }
-                    if (!title) {
-                        const titleEl = document.querySelector('.product-header__title, .audio-player__title, [class*="title"], .episode-metadata__primary .marquee-line__fragment');
-                        title = titleEl ? titleEl.innerText.trim() : 'Apple Podcasts';
+                    let artist = '';
+                    const playerBar = document.querySelector('.player-bar, .chrome-player, .player-lcd');
+                    if (playerBar) {
+                        const primaryMarquee = playerBar.querySelector('.marquee--primary, .player-lcd__title, .player-lcd__metadata [class*="primary"]');
+                        const secondaryMarquee = playerBar.querySelector('.marquee--secondary, .player-lcd__subtitle, .player-lcd__metadata [class*="secondary"]');
+                        
+                        if (primaryMarquee) title = cleanText(primaryMarquee.innerText);
+                        if (secondaryMarquee) artist = cleanText(secondaryMarquee.innerText);
                     }
 
-                    // Extract podcast/show title strictly from show link or page header
-                    let artist = '';
-                    const showLink = document.querySelector('.episode-header__show-link, .podcast-header__show-link, .product-header__title, [class*="show-link"]');
-                    if (showLink) {
-                        artist = showLink.innerText.trim();
+                    // Fallback to page headers if mini-player fields are empty (applying filters)
+                    if (!title) {
+                        const titleEl = document.querySelector('.product-header__title, .audio-player__title, [class*="title"], .episode-metadata__primary .marquee-line__fragment');
+                        title = cleanText(titleEl ? titleEl.innerText : '');
+                    }
+                    if (!title) {
+                        title = 'Apple Podcasts';
+                    }
+
+                    if (!artist) {
+                        const showLink = document.querySelector('.episode-header__show-link, .podcast-header__show-link, .product-header__title, [class*="show-link"]');
+                        artist = cleanText(showLink ? showLink.innerText : '');
                     }
                     if (!artist) {
                         const artistEl = document.querySelector('.product-header__subtitle, .audio-player__subtitle, [class*="subtitle"], .episode-metadata__secondary button.lcd-meta-line__fragment');
-                        artist = artistEl ? artistEl.innerText.trim() : 'Playing';
+                        artist = cleanText(artistEl ? artistEl.innerText : '');
+                    }
+                    if (!artist) {
+                        artist = 'Playing';
                     }
                     
                     let img = '';
@@ -763,6 +837,11 @@ class MainActivity : AppCompatActivity() {
         fun onPlaybackStateChanged(isPlaying: Boolean, title: String, artist: String, imageUrl: String, duration: Long, position: Long, streamUrl: String) {
             if (isDestroyed || isFinishing) return
             
+            // Ignore incoming position reports within 2000ms of a lockscreen seek to prevent snapping
+            if (System.currentTimeMillis() - lastSeekTime < 2000) {
+                return
+            }
+
             runOnUiThread {
                 handleStreamUrlUpdate(streamUrl, title, artist)
             }
