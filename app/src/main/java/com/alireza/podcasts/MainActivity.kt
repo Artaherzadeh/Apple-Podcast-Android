@@ -44,7 +44,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     private lateinit var offlineOverlay: LinearLayout
     private lateinit var btnRetry: Button
-    private lateinit var btnMenu: ImageButton
+    private lateinit var instructionsOverlay: View
+    private lateinit var btnUnderstand: Button
     
     // Config URLs (mapped from strings.xml)
     private val targetUrl by lazy { getString(R.string.target_url) }
@@ -132,7 +133,8 @@ class MainActivity : AppCompatActivity() {
         progressBar = findViewById(R.id.progressBar)
         offlineOverlay = findViewById(R.id.offline_overlay)
         btnRetry = findViewById(R.id.btn_retry)
-        btnMenu = findViewById(R.id.btn_menu)
+        instructionsOverlay = findViewById(R.id.instructions_overlay)
+        btnUnderstand = findViewById(R.id.btn_understand)
 
         setupWebView()
         setupGestureDetector()
@@ -140,8 +142,8 @@ class MainActivity : AppCompatActivity() {
         setupMediaReceiver()
         checkNotificationPermission()
 
-        btnMenu.setOnClickListener {
-            showOptionMenu()
+        btnUnderstand.setOnClickListener {
+            instructionsOverlay.visibility = View.GONE
         }
 
         btnRetry.setOnClickListener {
@@ -503,13 +505,34 @@ class MainActivity : AppCompatActivity() {
                     const position = Math.floor((video.currentTime || 0) * 1000);
 
                     // Extract title and artist using selectors from Apple Podcast site structure
-                    const titleEl = document.querySelector('.product-header__title, .audio-player__title, [class*="title"]');
-                    const artistEl = document.querySelector('.product-header__subtitle, .audio-player__subtitle, [class*="subtitle"]');
-                    const imgEl = document.querySelector('.product-header__image img, .audio-player__artwork img, [class*="artwork"] img');
+                    const titleEl = document.querySelector('.product-header__title, .audio-player__title, [class*="title"], .episode-metadata__primary .marquee-line__fragment');
+                    const artistEl = document.querySelector('.product-header__subtitle, .audio-player__subtitle, [class*="subtitle"], .episode-metadata__secondary button.lcd-meta-line__fragment');
+                    
+                    let img = '';
+                    const artworkContainer = document.querySelector('.artwork-container');
+                    if (artworkContainer) {
+                        const sourceEl = artworkContainer.querySelector('source[type="image/jpeg"]') 
+                                       || artworkContainer.querySelector('source[type="image/webp"]');
+                        if (sourceEl) {
+                            const srcset = sourceEl.getAttribute('srcset');
+                            if (srcset) {
+                                const sources = srcset.split(',').map(s => s.trim());
+                                if (sources.length > 0) {
+                                    const largestSource = sources[sources.length - 1];
+                                    img = largestSource.split(' ')[0];
+                                }
+                            }
+                        }
+                    }
+                    if (!img) {
+                        const imgEl = document.querySelector('.product-header__image img, .audio-player__artwork img, [class*="artwork"] img');
+                        if (imgEl && imgEl.src && !imgEl.src.includes('1x1.gif')) {
+                            img = imgEl.src;
+                        }
+                    }
 
                     const title = titleEl ? titleEl.innerText.trim() : 'Apple Podcasts';
                     const artist = artistEl ? artistEl.innerText.trim() : 'Playing';
-                    const img = imgEl ? imgEl.src : '';
 
                     // Only bridge if playback details actually changed (avoid constant JNI overhead)
                     if (isPlaying !== lastPlaying || title !== lastTitle || artist !== lastArtist || img !== lastImg || Math.abs(duration - lastDuration) > 2000) {

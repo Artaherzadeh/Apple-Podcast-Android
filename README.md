@@ -2,14 +2,16 @@
 
 A lightweight, secure, and open-source application that lets you enjoy Apple Podcasts directly on your Android phone. 
 
-This project bridges the gap for Android users, running the official Apple player in a polished fullscreen layout with background playback, offline warnings, and standard mobile gestures.
+This project bridges the gap for Android users, running the official Apple player in a polished fullscreen layout with background playback, native lock screen controls, and standard mobile gestures.
 
 ---
 
 ## ✨ Features
 
 *   **📺 Immersive Fullscreen:** Automatically fits your phone's screen layout so menus and page text sit comfortably below status bar icons and camera notches.
-*   **🎵 Background Listening:** Best-effort background playback. Audio can continue playing when the app is minimized or the screen is locked (Android battery saver restrictions may apply).
+*   **🚀 Seamless Splash Launch:** Starts up instantly with a smooth, dark launch animation, avoiding any white screen flashes on modern Android versions.
+*   **🎵 Lock Screen Player Controls:** Integrates natively with your phone's notification panel and lock screen. Displays your currently playing episode name, creator, and cover artwork, alongside standard Play, Pause, and Seek timeline controls.
+*   **📥 Native Downloads:** Tapping download buttons hands the file transfer over directly to your default system browser for secure, background download management.
 *   **✌️ Quick Controls Menu:** Tap the circular floating button in the top-right corner, or hold two fingers on the screen for 1 second, to slide up a helpful options sheet:
     *   **Home:** Jump directly back to the Apple Podcasts homepage.
     *   **Go Back:** Go back to the previous screen.
