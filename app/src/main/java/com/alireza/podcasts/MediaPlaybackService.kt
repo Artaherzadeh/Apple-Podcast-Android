@@ -30,6 +30,8 @@ class MediaPlaybackService : Service() {
         const val ACTION_PLAY = "com.alireza.podcasts.action.PLAY"
         const val ACTION_PAUSE = "com.alireza.podcasts.action.PAUSE"
         const val ACTION_UPDATE_STATE = "com.alireza.podcasts.action.UPDATE_STATE"
+        const val ACTION_FAST_FORWARD = "com.alireza.podcasts.action.FAST_FORWARD"
+        const val ACTION_REWIND = "com.alireza.podcasts.action.REWIND"
 
         const val EXTRA_IS_PLAYING = "extra_is_playing"
         const val EXTRA_TITLE = "extra_title"
@@ -116,6 +118,12 @@ class MediaPlaybackService : Service() {
                 ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_DETACH)
                 updateNotification()
             }
+            ACTION_FAST_FORWARD -> {
+                onFastForward()
+            }
+            ACTION_REWIND -> {
+                onRewind()
+            }
         }
         return START_STICKY
     }
@@ -153,12 +161,15 @@ class MediaPlaybackService : Service() {
                 }
 
                 override fun onSeekTo(pos: Long) {
-                    position = pos
-                    updatePlaybackState()
-                    val seekIntent = Intent(BROADCAST_SEEK).apply {
-                        putExtra(EXTRA_SEEK_POS, pos)
-                    }
-                    sendBroadcast(seekIntent)
+                    this@MediaPlaybackService.onSeekTo(pos)
+                }
+
+                override fun onFastForward() {
+                    this@MediaPlaybackService.onFastForward()
+                }
+
+                override fun onRewind() {
+                    this@MediaPlaybackService.onRewind()
                 }
             })
         }
@@ -171,7 +182,9 @@ class MediaPlaybackService : Service() {
                 PlaybackStateCompat.ACTION_PLAY or
                 PlaybackStateCompat.ACTION_PAUSE or
                 PlaybackStateCompat.ACTION_PLAY_PAUSE or
-                PlaybackStateCompat.ACTION_SEEK_TO
+                PlaybackStateCompat.ACTION_SEEK_TO or
+                PlaybackStateCompat.ACTION_FAST_FORWARD or
+                PlaybackStateCompat.ACTION_REWIND
             )
             .setState(state, position, if (isPlaying) 1.0f else 0.0f)
         mediaSession.setPlaybackState(stateBuilder.build())
@@ -225,6 +238,22 @@ class MediaPlaybackService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
+        val rewindIntent = Intent(this, MediaPlaybackService::class.java).apply {
+            action = ACTION_REWIND
+        }
+        val pendingRewindIntent = PendingIntent.getService(
+            this, 2, rewindIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val ffIntent = Intent(this, MediaPlaybackService::class.java).apply {
+            action = ACTION_FAST_FORWARD
+        }
+        val pendingFfIntent = PendingIntent.getService(
+            this, 3, ffIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
         val playPauseIcon = if (isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play
         val playPauseText = if (isPlaying) "Pause" else "Play"
 
@@ -240,15 +269,15 @@ class MediaPlaybackService : Service() {
             builder.setLargeIcon(it)
         }
 
-        // Add play/pause button for older API fallback (Android 12-)
-        builder.addAction(
-            NotificationCompat.Action.Builder(playPauseIcon, playPauseText, pendingPlayPauseIntent).build()
-        )
+        // Add Rewind (15s), Play/Pause, and Fast Forward (30s) buttons for notifications
+        builder.addAction(android.R.drawable.ic_media_rew, "Rewind 15s", pendingRewindIntent)
+        builder.addAction(playPauseIcon, playPauseText, pendingPlayPauseIntent)
+        builder.addAction(android.R.drawable.ic_media_ff, "Fast Forward 30s", pendingFfIntent)
 
         // Set MediaStyle
         val mediaStyle = MediaStyle()
             .setMediaSession(mediaSession.sessionToken)
-            .setShowActionsInCompactView(0)
+            .setShowActionsInCompactView(0, 1, 2)
         
         builder.setStyle(mediaStyle)
 
@@ -273,6 +302,25 @@ class MediaPlaybackService : Service() {
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(channel)
         }
+    }
+
+    private fun onFastForward() {
+        val targetPos = position + 30000L
+        onSeekTo(Math.min(targetPos, duration))
+    }
+
+    private fun onRewind() {
+        val targetPos = position - 15000L
+        onSeekTo(Math.max(0, targetPos))
+    }
+
+    private fun onSeekTo(pos: Long) {
+        position = pos
+        updatePlaybackState()
+        val seekIntent = Intent(BROADCAST_SEEK).apply {
+            putExtra(EXTRA_SEEK_POS, pos)
+        }
+        sendBroadcast(seekIntent)
     }
 
     override fun onBind(intent: Intent?): IBinder? {
