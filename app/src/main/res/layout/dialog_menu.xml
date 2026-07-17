@@ -215,8 +215,7 @@
             android:layout_height="24dp"
             android:src="@drawable/ic_download"
             android:contentDescription="Download Episode"
-            android:layout_marginEnd="16dp"
-            app:tint="@color/purple_primary" />
+            android:layout_marginEnd="16dp" />
 
         <LinearLayout
             android:layout_width="0dp"
