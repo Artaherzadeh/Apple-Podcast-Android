@@ -693,47 +693,40 @@ class MainActivity : AppCompatActivity() {
                     if (!menuList) return;
                     if (menuList.querySelector('.custom-download-item')) return;
                     
-                    const li = document.createElement('li');
+                    const existingItems = menuList.querySelectorAll('.contextual-menu-item');
+                    if (existingItems.length === 0) return;
+                    
+                    const templateLi = existingItems[existingItems.length - 1];
+                    const li = templateLi.cloneNode(true);
                     li.className = 'contextual-menu-item custom-download-item';
                     li.style.borderTop = '0.5px solid rgba(120, 120, 128, 0.36)';
                     
-                    const button = document.createElement('button');
-                    button.className = 'contextual-menu-item__button';
-                    button.title = 'Download Episode';
-                    button.type = 'button';
-                    button.style.width = '100%';
-                    button.style.textAlign = 'left';
-                    button.style.background = 'transparent';
-                    button.style.border = 'none';
-                    
-                    const wrapper = document.createElement('span');
-                    wrapper.className = 'contextual-menu-item__option-wrapper';
-                    
-                    const text = document.createElement('span');
-                    text.className = 'contextual-menu-item__option-text';
-                    text.innerText = 'Download Episode';
-                    
-                    const iconContainer = document.createElement('span');
-                    iconContainer.className = 'contextual-menu-item__icon-container';
-                    
-                    iconContainer.innerHTML = `
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#E5E5EA" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path>
-                        </svg>
-                    `;
-                    
-                    wrapper.appendChild(text);
-                    wrapper.appendChild(iconContainer);
-                    button.appendChild(wrapper);
-                    li.appendChild(button);
-                    
-                    button.onclick = function(e) {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        const trigger = document.querySelector('.contextual-menu__trigger');
-                        if (trigger) trigger.click();
-                        AndroidMediaBridge.triggerDownload();
-                    };
+                    const button = li.querySelector('button');
+                    if (button) {
+                        button.title = 'Download Episode';
+                        
+                        const textSpan = button.querySelector('.contextual-menu-item__option-text');
+                        if (textSpan) {
+                            textSpan.innerText = 'Download Episode';
+                        }
+                        
+                        const iconContainer = button.querySelector('.contextual-menu-item__icon-container');
+                        if (iconContainer) {
+                            iconContainer.innerHTML = `
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#E5E5EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; margin-top: 4px;">
+                                    <path d="M21 15V16.2C21 17.8802 21 18.7202 20.673 19.362C20.3854 19.9265 19.9265 20.3854 19.362 20.673C18.7202 21 17.8802 21 16.2 21H7.8C6.11984 21 5.27976 21 4.63803 20.673C4.07354 20.3854 3.6146 19.9265 3.32698 19.362C3 18.7202 3 17.8802 3 16.2V15M17 10L12 15M12 15L7 10M12 15V3"></path>
+                                </svg>
+                            `;
+                        }
+                        
+                        button.onclick = function(e) {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            const trigger = document.querySelector('.contextual-menu__trigger');
+                            if (trigger) trigger.click();
+                            AndroidMediaBridge.triggerDownload();
+                        };
+                    }
                     
                     menuList.appendChild(li);
                 }
