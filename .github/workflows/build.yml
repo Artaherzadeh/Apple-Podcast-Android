@@ -6,6 +6,8 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
     permissions:
       contents: write
 
@@ -14,6 +16,12 @@ jobs:
       uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract Version Name
+      id: get_version
+      run: |
+        VERSION=$(grep "versionName =" app/build.gradle.kts | head -n 1 | awk -F'"' '{print $2}')
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
 
     - name: Validate Gradle Wrapper
       uses: gradle/actions/wrapper-validation@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
@@ -70,9 +78,9 @@ jobs:
       uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1.21.0
       with:
         artifacts: "release-out/Apple.Podcasts.apk"
-        tag: "v1.1"
-        name: "Apple Podcasts v1.1"
-        body: "Automated release of Apple Podcasts for Android. Download Apple Podcasts.apk below to install. Signed with reproducible keystore."
+        tag: "v${{ needs.build-and-test.outputs.version }}"
+        name: "Apple Podcasts v${{ needs.build-and-test.outputs.version }}"
+        body: "Automated release of Apple Podcasts for Android v${{ needs.build-and-test.outputs.version }}. Download Apple.Podcasts.apk below to install. Signed with reproducible keystore."
         generateReleaseNotes: false
         allowUpdates: true
         removeArtifacts: true
