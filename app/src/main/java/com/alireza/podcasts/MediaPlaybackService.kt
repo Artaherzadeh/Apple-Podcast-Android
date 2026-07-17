@@ -158,7 +158,7 @@ class MediaPlaybackService : Service() {
                 PlaybackStateCompat.ACTION_PLAY_PAUSE or
                 PlaybackStateCompat.ACTION_SEEK_TO
             )
-            .setState(state, position, 1.0f)
+            .setState(state, position, if (isPlaying) 1.0f else 0.0f)
         mediaSession.setPlaybackState(stateBuilder.build())
     }
 
@@ -264,8 +264,18 @@ class MediaPlaybackService : Service() {
         return null
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        // Completely stop the background service when the user swipe-closes the app
+        stopSelf()
+    }
+
     override fun onDestroy() {
+        mediaSession.isActive = false
         mediaSession.release()
+        ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(NOTIFICATION_ID)
         super.onDestroy()
     }
 }

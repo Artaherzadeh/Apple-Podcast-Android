@@ -9,16 +9,17 @@ This project bridges the gap for Android users, running the official Apple playe
 ## ✨ Features
 
 *   **📺 Immersive Fullscreen:** Automatically fits your phone's screen layout so menus and page text sit comfortably below status bar icons and camera notches.
-*   **🚀 Seamless Splash Launch:** Starts up instantly with a smooth, dark launch animation, avoiding any white screen flashes on modern Android versions.
-*   **🎵 Lock Screen Player Controls:** Integrates natively with your phone's notification panel and lock screen. Displays your currently playing episode name, creator, and cover artwork, alongside standard Play, Pause, and Seek timeline controls.
-*   **📥 Native Downloads:** Tapping download buttons hands the file transfer over directly to your default system browser for secure, background download management.
-*   **✌️ Quick Controls Menu:** Tap the circular floating button in the top-right corner, or hold two fingers on the screen for 1 second, to slide up a helpful options sheet:
+*   **🚀 Seamless Splash Launch:** Starts up instantly with a smooth, dark launch animation and brand logo display, avoiding any white screen flashes on modern Android versions.
+*   **🎵 Lock Screen Player Controls:** Integrates natively with your phone's notification panel and lock screen. Displays your currently playing episode name, creator, and cover artwork, alongside standard Play, Pause, and Seek timeline controls. The timeline timer stops automatically when paused.
+*   **📥 Offline Episode Downloads:** Detects active audio streams and pops up a floating download banner. Tap it to download the audio file directly to your phone's public Downloads directory using Android's native `DownloadManager`. Files are automatically named as `[Podcast Name] - [Episode Title].mp3`.
+*   **✌️ Quick Controls Menu:** Hold two fingers on the screen for **0.5 seconds** to slide up a helpful options sheet (dimming the background by 75% for legibility):
     *   **Home:** Jump directly back to the Apple Podcasts homepage.
     *   **Go Back:** Go back to the previous screen.
     *   **Force Refresh:** Reload the current screen if it gets stuck.
-    *   **Clear Cache:** Free up phone storage space without logging you out of your Apple ID.
+    *   **Clear Cache:** Free up phone storage space and resets first-run gesture tips.
     *   **Background Playback Settings:** A quick link to resolve system battery limitations for continuous audio.
     *   **GitHub Project:** Open this page to check the source or contribute.
+    *   *Also displays current version name in the footer.*
 *   **📡 Safe Connection Warning:** Displays a friendly warning screen if your mobile data or Wi-Fi disconnects, with an easy "Try Again" recovery button.
 *   **🔒 Safe Navigation:** Links to external sites inside episode descriptions automatically open in safe external tabs, keeping your main listening app secure.
 
@@ -37,11 +38,14 @@ Privacy is key:
 
 You can download the latest version directly to your phone:
 
-1.  Go to the **[Releases](https://github.com/Artaherzadeh/Apple-Podcast-Android/releases/tag/latest)** section on the right-hand sidebar.
-2.  Download the **`Apple Podcasts.apk`** installer.
+1.  Go to the **[Releases](https://github.com/Artaherzadeh/Apple-Podcast-Android/releases)** page on the right-hand sidebar.
+2.  Download the latest APK installer file.
 3.  Transfer the downloaded file to your phone if downloaded on a PC.
 4.  Open your phone's **Files** app, find the APK, and tap it.
 5.  If prompted, grant permission to install from "Unknown Sources," then select **Install**.
+
+> [!NOTE]
+> **Signature Preservation:** Every build is signed with a consistent debug signature key. This allows you to install future updates over older builds seamlessly without needing to uninstall the application first.
 
 ---
 

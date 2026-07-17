@@ -30,6 +30,9 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.Toast
+import android.app.DownloadManager
+import android.os.Environment
+import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -46,6 +49,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnRetry: Button
     private lateinit var instructionsOverlay: View
     private lateinit var btnUnderstand: Button
+    
+    // Download Banner views & state
+    private lateinit var downloadBanner: View
+    private lateinit var txtDownloadDetails: TextView
+    private lateinit var btnCloseBanner: View
+    private var currentStreamUrl = ""
+    private var dismissedStreamUrl = ""
+    private var currentTrackTitle = "Episode"
+    private var currentTrackArtist = "Apple Podcasts"
     
     // Config URLs (mapped from strings.xml)
     private val targetUrl by lazy { getString(R.string.target_url) }
@@ -135,6 +147,11 @@ class MainActivity : AppCompatActivity() {
         btnRetry = findViewById(R.id.btn_retry)
         instructionsOverlay = findViewById(R.id.instructions_overlay)
         btnUnderstand = findViewById(R.id.btn_understand)
+        
+        // Download banner layout initialization
+        downloadBanner = findViewById(R.id.download_banner)
+        txtDownloadDetails = findViewById(R.id.txt_download_details)
+        btnCloseBanner = findViewById(R.id.btn_close_banner)
 
         setupWebView()
         setupGestureDetector()
@@ -142,8 +159,27 @@ class MainActivity : AppCompatActivity() {
         setupMediaReceiver()
         checkNotificationPermission()
 
+        // First-run layout state management
+        val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        val hasSeenOverlay = prefs.getBoolean("has_seen_overlay_v1", false)
+        if (hasSeenOverlay) {
+            instructionsOverlay.visibility = View.GONE
+        } else {
+            instructionsOverlay.visibility = View.VISIBLE
+        }
+
         btnUnderstand.setOnClickListener {
             instructionsOverlay.visibility = View.GONE
+            prefs.edit().putBoolean("has_seen_overlay_v1", true).apply()
+        }
+
+        btnCloseBanner.setOnClickListener {
+            downloadBanner.visibility = View.GONE
+            dismissedStreamUrl = currentStreamUrl
+        }
+
+        downloadBanner.setOnClickListener {
+            triggerPodcastDownload()
         }
 
         btnRetry.setOnClickListener {
@@ -323,7 +359,7 @@ class MainActivity : AppCompatActivity() {
                         isTwoFingerGestureActive = true
                         touchDownX = (event.getX(0) + event.getX(1)) / 2
                         touchDownY = (event.getY(0) + event.getY(1)) / 2
-                        gestureHandler.postDelayed(longPressRunnable, 1000) // 1 second hold
+                        gestureHandler.postDelayed(longPressRunnable, 500) // 0.5 second hold
                     }
                 }
                 MotionEvent.ACTION_MOVE -> {
@@ -354,9 +390,21 @@ class MainActivity : AppCompatActivity() {
         val dialog = BottomSheetDialog(this)
         dialog.setContentView(R.layout.dialog_menu)
         
+        // Dim the background to 75% opacity
+        dialog.window?.setDimAmount(0.75f)
+        
         // Remove background overlay so top rounded corners are visible
         dialog.window?.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
             ?.setBackgroundResource(android.R.color.transparent)
+
+        // Set version info dynamically on option menu footer
+        val menuVersion = dialog.findViewById<TextView>(R.id.menu_version)
+        val versionName = try {
+            packageManager.getPackageInfo(packageName, 0).versionName
+        } catch (e: Exception) {
+            "1.1"
+        }
+        menuVersion?.text = "Version $versionName"
 
         val menuHome = dialog.findViewById<LinearLayout>(R.id.menu_home)
         val menuBack = dialog.findViewById<LinearLayout>(R.id.menu_back)
@@ -387,6 +435,9 @@ class MainActivity : AppCompatActivity() {
         menuClearCache?.setOnClickListener {
             dialog.dismiss()
             webView.clearCache(true)
+            // Reset overlay state so it shows up again on next launch
+            getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                .edit().putBoolean("has_seen_overlay_v1", false).apply()
             Toast.makeText(this, getString(R.string.toast_cache_cleared), Toast.LENGTH_SHORT).show()
         }
 
@@ -495,6 +546,7 @@ class MainActivity : AppCompatActivity() {
                 let lastArtist = '';
                 let lastImg = '';
                 let lastDuration = 0;
+                let lastPosition = 0;
                 
                 function syncPlayerState() {
                     const video = document.querySelector('video, audio');
@@ -503,6 +555,7 @@ class MainActivity : AppCompatActivity() {
                     const isPlaying = !video.paused;
                     const duration = Math.floor((video.duration || 0) * 1000);
                     const position = Math.floor((video.currentTime || 0) * 1000);
+                    const streamUrl = video.src || '';
 
                     // Extract title and artist using selectors from Apple Podcast site structure
                     const titleEl = document.querySelector('.product-header__title, .audio-player__title, [class*="title"], .episode-metadata__primary .marquee-line__fragment');
@@ -535,14 +588,15 @@ class MainActivity : AppCompatActivity() {
                     const artist = artistEl ? artistEl.innerText.trim() : 'Playing';
 
                     // Only bridge if playback details actually changed (avoid constant JNI overhead)
-                    if (isPlaying !== lastPlaying || title !== lastTitle || artist !== lastArtist || img !== lastImg || Math.abs(duration - lastDuration) > 2000) {
+                    if (isPlaying !== lastPlaying || title !== lastTitle || artist !== lastArtist || img !== lastImg || Math.abs(duration - lastDuration) > 2000 || Math.abs(position - lastPosition) > 2000) {
                         lastPlaying = isPlaying;
                         lastTitle = title;
                         lastArtist = artist;
                         lastImg = img;
                         lastDuration = duration;
+                        lastPosition = position;
                         
-                        AndroidMediaBridge.onPlaybackStateChanged(isPlaying, title, artist, img, duration, position);
+                        AndroidMediaBridge.onPlaybackStateChanged(isPlaying, title, artist, img, duration, position, streamUrl);
                     }
                 }
                 setInterval(syncPlayerState, 1000);
@@ -557,6 +611,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        // Stop background media service to clear lockscreen notification and active timers
+        try {
+            val serviceIntent = Intent(this, MediaPlaybackService::class.java)
+            stopService(serviceIntent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
         // Unregister Network Callback safely
         try {
             connectivityManager.unregisterNetworkCallback(networkCallback)
@@ -598,8 +660,13 @@ class MainActivity : AppCompatActivity() {
     // JS Media Bridge interface class
     inner class MediaBridge {
         @android.webkit.JavascriptInterface
-        fun onPlaybackStateChanged(isPlaying: Boolean, title: String, artist: String, imageUrl: String, duration: Long, position: Long) {
+        fun onPlaybackStateChanged(isPlaying: Boolean, title: String, artist: String, imageUrl: String, duration: Long, position: Long, streamUrl: String) {
             if (isDestroyed || isFinishing) return
+            
+            runOnUiThread {
+                handleStreamUrlUpdate(streamUrl, title, artist)
+            }
+
             val intent = Intent(this@MainActivity, MediaPlaybackService::class.java).apply {
                 action = MediaPlaybackService.ACTION_UPDATE_STATE
                 putExtra(MediaPlaybackService.EXTRA_IS_PLAYING, isPlaying)
@@ -614,6 +681,53 @@ class MainActivity : AppCompatActivity() {
             } else {
                 startService(intent)
             }
+        }
+    }
+
+    private fun handleStreamUrlUpdate(streamUrl: String, title: String, artist: String) {
+        if (isDestroyed || isFinishing) return
+        currentTrackTitle = title
+        currentTrackArtist = artist
+        
+        // Show banner only if the stream URL is valid
+        if (streamUrl.isNotEmpty() && streamUrl.startsWith("http")) {
+            currentStreamUrl = streamUrl
+            
+            // Reset visibility if this is a new track
+            if (currentStreamUrl != dismissedStreamUrl) {
+                txtDownloadDetails.text = "$title\n$artist\nURL: $streamUrl"
+                downloadBanner.visibility = View.VISIBLE
+            }
+        } else {
+            // Do not hide the banner if they hide or pause the podcast player, only close manually
+        }
+    }
+
+    private fun triggerPodcastDownload() {
+        val url = currentStreamUrl
+        if (url.isEmpty() || !url.startsWith("http")) {
+            Toast.makeText(this, "No valid download link found.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        try {
+            // Format name exactly as: [Podcast Name] - [Episode Title].mp3
+            val cleanPodcast = currentTrackArtist.replace(Regex("[\\\\/:*?\"<>|]"), "_")
+            val cleanEpisode = currentTrackTitle.replace(Regex("[\\\\/:*?\"<>|]"), "_")
+            val filename = "$cleanPodcast - $cleanEpisode.mp3"
+
+            val request = DownloadManager.Request(Uri.parse(url)).apply {
+                setTitle(currentTrackTitle)
+                setDescription("Downloading $currentTrackArtist...")
+                setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, filename)
+            }
+
+            val dm = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            dm.enqueue(request)
+            Toast.makeText(this, "Download started: $filename", Toast.LENGTH_LONG).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Download failed: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 }
